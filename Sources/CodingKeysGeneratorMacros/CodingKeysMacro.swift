@@ -38,17 +38,17 @@ public struct TablePersistMacro: MemberMacro {
   }
 }
 
-// extension TablePersistMacro: ExtensionMacro {
-//  public static func expansion(of node: AttributeSyntax,
-//                               attachedTo declaration: some DeclGroupSyntax,
-//                               providingExtensionsOf type: some TypeSyntaxProtocol,
-//                               conformingTo protocols: [TypeSyntax], in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax] {
-////    guard !protocols.isEmpty else {
-////      return []
-////    }
-//    return [try ExtensionDeclSyntax("extension \(type.trimmed): TestP") {}]
-//  }
-// }
+ extension TablePersistMacro: ExtensionMacro {
+  public static func expansion(of node: AttributeSyntax,
+                               attachedTo declaration: some DeclGroupSyntax,
+                               providingExtensionsOf type: some TypeSyntaxProtocol,
+                               conformingTo protocols: [TypeSyntax], in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax] {
+    guard !protocols.isEmpty else {
+      return []
+    }
+    return [try ExtensionDeclSyntax("extension \(type.trimmed): TableObject") {}]
+  }
+ }
 
 public struct CodingKeysMacro: MemberMacro {
   public static func expansion(
