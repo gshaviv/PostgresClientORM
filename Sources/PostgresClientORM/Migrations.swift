@@ -39,6 +39,7 @@ public class Migrations {
   }
 }
 
+@TablePersist(.camelCase, trackDirty: false)
 struct PerformedMigration: TableObject, Hashable {
   static var tableName = "_Migrations"
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {
@@ -51,15 +52,15 @@ struct PerformedMigration: TableObject, Hashable {
     hasher.combine(id)
   }
   
-  enum CodingKeys: String, CodingKey, CaseIterable {
-    case id
+  init(from decoder: Decoder) throws {
+    
   }
-
-  typealias Key = CodingKeys
-
-  static var idColumn: ColumnName {
-    column(.id)
+  
+  func encode(to encoder: Encoder) throws {
+    
   }
+  
+  init() {}
 }
 
 public enum ColumnType: String {

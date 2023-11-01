@@ -32,5 +32,8 @@ let package = Package(
       ]),
     .testTarget(
       name: "PostgresClientORMTests",
-      dependencies: ["PostgresClientORM"]),
+      dependencies: ["PostgresClientORM",
+                     .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+
+      ]),
   ])

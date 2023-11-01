@@ -18,3 +18,7 @@ public macro CodingKey(custom: String) = #externalMacro(
 
 @attached(peer)
 public macro CodingKeyIgnored() = #externalMacro(module: "CodingKeysGeneratorMacros", type: "CodingKeyIgnoredMacro")
+
+@attached(accessor, names: named(get), named(set))
+@attached(peer, names: named(_idHolder))
+public macro ID() = #externalMacro(module: "CodingKeysGeneratorMacros", type: "IDMacro")
