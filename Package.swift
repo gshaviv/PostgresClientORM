@@ -29,8 +29,7 @@ let package = Package(
       dependencies: [
         .product(name: "PostgresClientKit", package: "PostgresClientKit"),
         "CodingKeysGeneratorMacros",
-      ],
-      path: "Sources/PostgresClientORM"),
+      ]),
     .testTarget(
       name: "PostgresClientORMTests",
       dependencies: ["PostgresClientORM"]),
