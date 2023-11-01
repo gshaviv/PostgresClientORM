@@ -2,8 +2,6 @@ public enum KeyType {
   case camelCase
   case snakeCase
 }
-internal protocol TableObject {}
-protocol TestP {}
 
 @attached(member, names: named(CodingKeys))
 public macro CodingKeys(_ type: KeyType) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "CodingKeysMacro")
