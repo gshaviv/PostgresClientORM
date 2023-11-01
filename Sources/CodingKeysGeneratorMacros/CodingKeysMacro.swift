@@ -43,9 +43,9 @@ public struct TablePersistMacro: MemberMacro {
                                attachedTo declaration: some DeclGroupSyntax,
                                providingExtensionsOf type: some TypeSyntaxProtocol,
                                conformingTo protocols: [TypeSyntax], in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax] {
-//    guard !protocols.isEmpty else {
-//      return []
-//    }
+    guard !protocols.isEmpty else {
+      return []
+    }
     return [try ExtensionDeclSyntax("extension \(type.trimmed): TableObject") {}]
   }
  }
