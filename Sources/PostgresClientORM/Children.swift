@@ -18,26 +18,26 @@ public class Children<Child: TableObject>: AsyncSequence, AsyncIteratorProtocol 
   let sortKey: Child.Key?
   let sortDir: SQLQuery<Child>.OrderBy
   
-  init(ofType childType: Child.Type, referencing: some TableObject, by childCol: Child.Key, sortBy: Child.Key? = nil, order: SQLQuery<Child>.OrderBy = .ascending) {
+  public init(ofType childType: Child.Type, referencing: some TableObject, by childCol: Child.Key, sortBy: Child.Key? = nil, order: SQLQuery<Child>.OrderBy = .ascending) {
     self.parentId = referencing.id
     self.referencingColumn = childCol
     self.sortKey = sortBy
     self.sortDir = order
   }
   
-  var values: [Child] {
+  public var values: [Child] {
     loadedValues ?? []
   }
   
-  var isLoaded: Bool {
+  public var isLoaded: Bool {
     loadedValues != nil
   }
   
-  subscript(idx: Int) -> Child {
+  public subscript(idx: Int) -> Child {
     values[idx]
   }
   
-  func load() async throws {
+  public func load() async throws {
     guard let parentId else {
       throw TableObjectError.general("Missing parent id")
     }
@@ -54,7 +54,7 @@ public class Children<Child: TableObject>: AsyncSequence, AsyncIteratorProtocol 
       .execute()
   }
   
-  var loadedCount: Int {
+  public var loadedCount: Int {
     get async throws {
       if !isLoaded {
         try await load()
@@ -63,13 +63,13 @@ public class Children<Child: TableObject>: AsyncSequence, AsyncIteratorProtocol 
     }
   }
   
-  var count: Int { values.count }
+  public var count: Int { values.count }
   
-  func reset() {
+  public func reset() {
     loadedValues = nil
   }
   
-  func reload() async throws {
+  public func reload() async throws {
     reset()
     try await load()
   }
