@@ -14,7 +14,6 @@ public protocol TableObject: Codable, FieldGroup {
   var id: Self.IDType? { get nonmutating set }
   var dbHash: Int? { get nonmutating set }
   static var idColumn: ColumnName { get }
-  static func column(_ key: Key) -> ColumnName
 }
 
 public extension TableObject {

@@ -40,7 +40,7 @@ public class Migrations {
 }
 
 @TablePersist(.camelCase, trackDirty: false)
-struct PerformedMigration: TableObject, Hashable {
+struct PerformedMigration: Hashable {
   static var tableName = "_Migrations"
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {
     lhs.id == rhs.id
@@ -50,14 +50,6 @@ struct PerformedMigration: TableObject, Hashable {
   
   func hash(into hasher: inout Hasher) {
     hasher.combine(id)
-  }
-  
-  init(from decoder: Decoder) throws {
-    
-  }
-  
-  func encode(to encoder: Encoder) throws {
-    
   }
   
   init() {}

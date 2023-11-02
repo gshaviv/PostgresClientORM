@@ -9,7 +9,6 @@ import Foundation
 
 public protocol FieldGroup: Codable {
   associatedtype Key: CodingKey
-  static func column(_ key: Key) -> ColumnName
 }
 
 public extension FieldGroup {

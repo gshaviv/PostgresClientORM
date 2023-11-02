@@ -49,6 +49,12 @@ struct Entity {
       let source = """
 @TablePersist(.snakeCase, trackDirty: true)
 struct Entity {
+  lazy var planets = Children(of: self, ofType: Planet.self, parent: .star)
+  var otherClass = Classic()
+  var accesssedVar:Int  {
+  get { 0 }
+  set { accesssedVar = newValue }
+  }
   @CodingKey(custom: "entity_id")
   @ID var id: String?
   let currentValue: Int
@@ -61,6 +67,12 @@ struct Entity {
       let expected = """
 
 struct Entity {
+  lazy var planets = Children(of: self, ofType: Planet.self, parent: .star)
+  var otherClass = Classic()
+  var accesssedVar:Int  {
+  get { 0 }
+  set { accesssedVar = newValue }
+  }
   
   var id: String? {
       get {
@@ -78,6 +90,8 @@ struct Entity {
   let `protocol`: String
 
     enum CodingKeys: String, CodingKey, CaseIterable {
+        case planets
+        case otherClass = "other_class"
         case id = "entity_id"
         case currentValue = "current_value"
         case count
@@ -85,6 +99,31 @@ struct Entity {
     }
 
     typealias Key = CodingKeys
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.otherClass = try container.decodeI(Classic.self, forKey: .otherClass)
+        self.accesssedVar = try container.decodeI(Int.self, forKey: .accesssedVar)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id)
+        self.currentValue = try container.decodeI(Int.self, forKey: .currentValue)
+        self.foo = try container.decodeI(Bool.self, forKey: .foo)
+        self.count = try container.decodeI(Int.self, forKey: .count)
+        self.protocol = try container.decodeI(String.self, forKey: .protocol)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        if planets.isLoaded, !(encoder is SQLEncoder) {
+            try container.encode(self.planets.values, forKey: .planets)
+        }
+        try container.encode(self.otherClass, forKey: .otherClass)
+        try container.encode(self.accesssedVar, forKey: .accesssedVar)
+        try container.encodeIfPresent(self.id, forKey: .id)
+        try container.encode(self.currentValue, forKey: .currentValue)
+        try container.encode(self.foo, forKey: .foo)
+        try container.encode(self.count, forKey: .count)
+        try container.encode(self.protocol, forKey: .protocol)
+    }
 
     static var idColumn: ColumnName {
         Self.column(.entity_id)
