@@ -102,13 +102,13 @@ struct Entity {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.otherClass = try container.decodeI(Classic.self, forKey: .otherClass)
-        self.accesssedVar = try container.decodeI(Int.self, forKey: .accesssedVar)
-        self.id = try container.decodeIfPresent(String.self, forKey: .id)
-        self.currentValue = try container.decodeI(Int.self, forKey: .currentValue)
-        self.foo = try container.decodeI(Bool.self, forKey: .foo)
-        self.count = try container.decodeI(Int.self, forKey: .count)
-        self.protocol = try container.decodeI(String.self, forKey: .protocol)
+        self.otherClass = try container.decode(Classic.self, forKey: .otherClass)
+        self.accesssedVar = try container.decode(Int.self, forKey: .accesssedVar)
+        self._idHolder.value = try container.decode(String?.self, forKey: .id)
+        self.currentValue = try container.decode(Int.self, forKey: .currentValue)
+        self.foo = try container.decode(Bool.self, forKey: .foo)
+        self.count = try container.decode(Int.self, forKey: .count)
+        self.protocol = try container.decode(String.self, forKey: .protocol)
     }
 
     func encode(to encoder: Encoder) throws {
