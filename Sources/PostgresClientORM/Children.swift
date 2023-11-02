@@ -12,7 +12,7 @@ public class Children<Child: TableObject>: Sequence {
   public typealias AsyncIterator = Children<Child>
   public typealias Element = Child
   public let referencingColumn: Child.Key
-  private var loadedValues: [Child]?
+  public var loadedValues: [Child]?
   let sortKey: Child.Key?
   let sortDir: SQLQuery<Child>.OrderBy
   
