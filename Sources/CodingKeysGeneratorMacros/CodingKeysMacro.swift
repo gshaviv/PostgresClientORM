@@ -106,7 +106,7 @@ public struct TablePersistMacro: MemberMacro {
         let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
         initDecl.append("self.\(cleanName) = try container.decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
       } else {
-        initDecl.append("self.\(cleanName) = try container.decodeI(\(type.trimmed).self, forKey: .\(cleanName))")
+        initDecl.append("self.\(cleanName) = try container.decode(\(type.trimmed).self, forKey: .\(cleanName))")
       }
     }
     initDecl.append("}")
