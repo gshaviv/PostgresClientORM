@@ -9,6 +9,6 @@ import Foundation
 
 public class IDHolder<Type: Codable> {
   var value: Type?
-  
-  init() {}
+
+  public init() {}
 }
