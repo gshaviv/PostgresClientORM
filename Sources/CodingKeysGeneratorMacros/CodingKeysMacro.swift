@@ -92,8 +92,8 @@ public struct TablePersistMacro: MemberMacro {
       if  type.is(OptionalTypeSyntax.self) {
         encodeDecl.append("try container.encodeIfPresent(self.\(cleanName), forKey: .\(cleanName))")
       } else if type.description == "Children" {
-        encodeDecl.append("if \(cleanName).isLoaded, !(encoder is SQLEncoder) {")
-        encodeDecl.append("try container.encode(self.\(cleanName).values, forKey: .\(cleanName))")
+        encodeDecl.append("if !(encoder is SQLEncoder) {")
+        encodeDecl.append("try container.encodeIfPresent(self.\(cleanName).loadedValues, forKey: .\(cleanName))")
         encodeDecl.append("}")
       } else {
         encodeDecl.append("try container.encode(self.\(cleanName), forKey: .\(cleanName))")

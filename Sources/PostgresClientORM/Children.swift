@@ -8,18 +8,15 @@
 import Foundation
 import PostgresClientKit
 
-public class Children<Child: TableObject>: AsyncSequence, AsyncIteratorProtocol {
+public class Children<Child: TableObject>: Sequence {
   public typealias AsyncIterator = Children<Child>
   public typealias Element = Child
-  public let parentId: PostgresValueConvertible?
   public let referencingColumn: Child.Key
   private var loadedValues: [Child]?
-  private var iterator: Array<Child>.Iterator?
   let sortKey: Child.Key?
   let sortDir: SQLQuery<Child>.OrderBy
   
-  public init(ofType childType: Child.Type, referencing: some TableObject, by childCol: Child.Key, sortBy: Child.Key? = nil, order: SQLQuery<Child>.OrderBy = .ascending) {
-    self.parentId = referencing.id
+  public init(ofType childType: Child.Type, by childCol: Child.Key, sortBy: Child.Key? = nil, order: SQLQuery<Child>.OrderBy = .ascending) {
     self.referencingColumn = childCol
     self.sortKey = sortBy
     self.sortDir = order
@@ -37,10 +34,7 @@ public class Children<Child: TableObject>: AsyncSequence, AsyncIteratorProtocol 
     values[idx]
   }
   
-  public func load() async throws {
-    guard let parentId else {
-      throw TableObjectError.general("Missing parent id")
-    }
+  public func load(parentId: PostgresValueConvertible) async throws {
     var query = Child.select()
       .where {
         Child.column(self.referencingColumn) == parentId
@@ -54,36 +48,18 @@ public class Children<Child: TableObject>: AsyncSequence, AsyncIteratorProtocol 
       .execute()
   }
   
-  public var loadedCount: Int {
-    get async throws {
-      if !isLoaded {
-        try await load()
-      }
-      return values.count
-    }
-  }
-  
   public var count: Int { values.count }
   
   public func reset() {
     loadedValues = nil
   }
   
-  public func reload() async throws {
+  public func reload(parentId: PostgresValueConvertible) async throws {
     reset()
-    try await load()
+    try await load(parentId: parentId)
   }
-  
-  public func next() async throws -> Child? {
-    if !isLoaded {
-      try await load()
-      iterator = loadedValues?.makeIterator()
-    }
-    return iterator?.next()
-  }
-  
-  public func makeAsyncIterator() -> Self {
-    iterator = loadedValues?.makeIterator()
-    return self
+
+  public func makeIterator() -> Array<Child>.Iterator {
+    values.makeIterator()
   }
 }

@@ -8,9 +8,9 @@
 import Foundation
 import PostgresClientKit
 
-class SQLEncoder: Encoder {
-  var codingPath: [CodingKey] = []
-  var userInfo: [CodingUserInfoKey: Any] = [:]
+public class SQLEncoder: Encoder {
+  public var codingPath: [CodingKey] = []
+  public var userInfo: [CodingUserInfoKey: Any] = [:]
   fileprivate var variableNames = [String]()
   fileprivate var values = [String]()
   
@@ -19,7 +19,7 @@ class SQLEncoder: Encoder {
     case partialUpdate
   }
 
-  func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key: CodingKey {
+  public func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key: CodingKey {
     KeyedEncodingContainer(
       SQLKeyedEncodingContainer(codingPath: codingPath,
                                 appendValues: { [weak self] name, value in
@@ -31,11 +31,11 @@ class SQLEncoder: Encoder {
     )
   }
   
-  func unkeyedContainer() -> UnkeyedEncodingContainer {
+  public func unkeyedContainer() -> UnkeyedEncodingContainer {
     fatalError("Unsupported")
   }
   
-  func singleValueContainer() -> SingleValueEncodingContainer {
+  public func singleValueContainer() -> SingleValueEncodingContainer {
     fatalError("Unsupported")
   }
   
