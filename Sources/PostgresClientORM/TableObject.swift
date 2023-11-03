@@ -40,8 +40,11 @@ public extension TableObject {
     nonmutating set {}
   }
 
-  static func fetch(id: IDType, transaction: UUID? = nil) async throws -> Self? {
-    try await select().where {
+  static func fetch(id: IDType?, transaction: UUID? = nil) async throws -> Self? {
+    guard let id else {
+      return nil
+    }
+    return try await select().where {
       idColumn == id
     }
     .transaction(transaction)
