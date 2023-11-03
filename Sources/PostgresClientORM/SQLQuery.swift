@@ -47,12 +47,12 @@ public struct SQLQuery<TYPE: Codable> {
     case descending = "DESC"
   }
 
-  public func orderBy(_ columns: CodingKey..., direction: OrderBy = .ascending) -> Self {
-    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(columns.map(\.stringValue).joined(separator: ",")) \(direction == .descending ? direction.rawValue : "")"], in: transaction)
+  public func orderBy(_ columns: ColumnName..., direction: OrderBy = .ascending) -> Self {
+    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(columns.map(\.name).joined(separator: ",")) \(direction == .descending ? direction.rawValue : "")"], in: transaction)
   }
 
-  public func orderBy(_ pairs: (CodingKey, OrderBy)...) -> Self {
-    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(pairs.map { "\($0.0.stringValue) \($0.1.rawValue)" }.joined(separator: ","))"], in: transaction)
+  public func orderBy(_ pairs: (ColumnName, OrderBy)...) -> Self {
+    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(pairs.map { "\($0.0.name) \($0.1.rawValue)" }.joined(separator: ","))"], in: transaction)
   }
 
   public func transaction(_ id: UUID?) -> Self {
