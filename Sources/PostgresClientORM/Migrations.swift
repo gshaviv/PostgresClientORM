@@ -260,8 +260,3 @@ public func column(_ name: String, type: ColumnType = .unknwon) -> ColumnDefinit
 public func table(_ name: String, @ArrayBuilder<ColumnDefinitation> columns: () throws -> [ColumnDefinitation] = { [] }) rethrows -> TableDefinition {
   try TableDefinition(name: name, columns: columns())
 }
-
-@TableObject(.camelCase, idType: UUID.self, trackDirty: false)
-final class test {
-  var test: Int
-}
