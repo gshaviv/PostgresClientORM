@@ -6,9 +6,9 @@ public enum KeyType {
 @attached(member, names: named(CodingKeys))
 public macro CodingKeys(_ type: KeyType) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "CodingKeysMacro")
 
-@attached(member, names: named(CodingKeys), named(Key), named(idColumn), named(dbHash), named(init(from:)), named(encode(to:)))
+@attached(member, names: named(CodingKeys), named(Key), named(idColumn), named(id), named(_idHolder), named(dbHash), named(init(from:)), named(encode(to:)))
 @attached(extension, conformances: TableObject)
-public macro TableObject(_ type: KeyType, trackDirty: Bool) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "TablePersistMacro")
+public macro TableObject(_ type: KeyType, idType: Any.Type, trackDirty: Bool) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "TablePersistMacro")
 
 @attached(peer)
 public macro CodingKey(custom: String) = #externalMacro(

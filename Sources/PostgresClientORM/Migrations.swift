@@ -39,15 +39,13 @@ public class Migrations {
   public init() {}
 }
 
-@TableObject(.camelCase, trackDirty: false)
+@TableObject(.camelCase, idType: String.self, trackDirty: false)
 struct PerformedMigration: Hashable {
   static var tableName = "_Migrations"
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {
     lhs.id == rhs.id
   }
-  
-  @ID var id: String?
-  
+    
   func hash(into hasher: inout Hasher) {
     hasher.combine(id)
   }
@@ -261,4 +259,9 @@ public func column(_ name: String, type: ColumnType = .unknwon) -> ColumnDefinit
 
 public func table(_ name: String, @ArrayBuilder<ColumnDefinitation> columns: () throws -> [ColumnDefinitation] = { [] }) rethrows -> TableDefinition {
   try TableDefinition(name: name, columns: columns())
+}
+
+@TableObject(.camelCase, idType: UUID.self, trackDirty: false)
+final class test {
+  var test: Int
 }

@@ -47,8 +47,8 @@ struct Entity {
   
   func testTablePersistMacros() {
       let source = """
-@TableObject(.snakeCase, trackDirty: true)
-struct Entity {
+@TableObject(.snakeCase, idType: String.self, trackDirty: true)
+final class Entity {
   lazy var planets = Children(of: self, ofType: Planet.self, parent: .star)
   var otherClass = Classic()
   var accesssedVar:Int  {
@@ -56,7 +56,6 @@ struct Entity {
   set { accesssedVar = newValue }
   }
   @CodingKey(custom: "entity_id")
-  @ID var id: String?
   let currentValue: Int
   @CodingKeyIgnored
   let foo: Bool

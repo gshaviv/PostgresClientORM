@@ -7,15 +7,32 @@ import SwiftSyntaxMacros
 public struct TablePersistMacro: MemberMacro {
   public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
     guard case let .argumentList(arguments) = node.arguments,
-          arguments.count == 2,
-          let generateDbHash = arguments.last?.expression.description
+          arguments.count == 3,
+          let generateDbHash = arguments.last?.expression.description,
+          let idType = arguments[arguments.index(after: arguments.startIndex)].expression.description.components(separatedBy: ".").first
     else {
       context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "Need two arguments: key case type, track dirty", diagnosticID: .arguments, severity: .error)))
+                             message: GeneratorDiagnostic(message: "Need three arguments: key case type, idType, track dirty", diagnosticID: .arguments, severity: .error)))
       return []
     }
-
     let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, in: context)
+
+    let isStruct: Bool
+    switch declaration.kind {
+    case .classDecl:
+      isStruct = false
+      if !declaration.description.contains("final") {
+        context.diagnose(.init(node: node,
+                               message: GeneratorDiagnostic(message: "@TableObject classes must be declared final", diagnosticID: .arguments, severity: .error)))
+        return []
+      }
+    case .structDecl:
+      isStruct = true
+    default:
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "@TableObject can be attached only to final class or struct", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
 
     let members = declaration.memberBlock.members
       .flatMap { (memberDeclListItemSyntax: MemberBlockItemSyntax) in
@@ -59,7 +76,7 @@ public struct TablePersistMacro: MemberMacro {
           fatalError()
         }
         return nil
-      }
+      } + [(TokenSyntax(stringLiteral: "id"), TypeSyntax(stringLiteral: idType))]
 
     // varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors.as(AccessorDeclListSyntax.self)
 
@@ -88,7 +105,7 @@ public struct TablePersistMacro: MemberMacro {
       if type.description == "Children" {
         continue
       }
-      if name.trimmed.description == "id" {
+      if name.trimmed.description == "id", isStruct {
         let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
         initDecl.append("self._idHolder.value = try container.decode(\(baseType).self, forKey: .\(cleanName))")
       } else if type.is(OptionalTypeSyntax.self) {
@@ -107,7 +124,22 @@ public struct TablePersistMacro: MemberMacro {
                          DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }")] +
       (generateDbHash == "true" ? [
         "@DBHash var dbHash: Int?"
-      ] : [])
+      ] : []) +
+      (isStruct ? [
+        "private let _idHolder = IDHolder<\(raw: idType)>()",
+        """
+        var id: \(raw: idType)? {
+        get {
+           _idHolder.value
+        }
+        nonmutating set {
+           _idHolder.value = newValue
+        }
+        }
+        """
+      ] : [
+        "var id: \(raw: idType)?"
+      ])
   }
 }
 
@@ -185,7 +217,7 @@ public struct CodingKeysMacro: MemberMacro {
         }
         return raw == keyValue ? "case \(property)" : "case \(property) = \"\(keyValue)\""
       }
-    }
+    } + ["case id"]
     guard !cases.isEmpty else { return [] }
     let casesDecl: DeclSyntax = """
     enum CodingKeys: String, CodingKey, CaseIterable {
