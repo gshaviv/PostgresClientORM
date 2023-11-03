@@ -134,7 +134,7 @@ extension TablePersistMacro: ExtensionMacro {
     guard !protocols.isEmpty else {
       return []
     }
-    return try [ExtensionDeclSyntax("extension \(type.trimmed): TableObject, FieldGroup") {}]
+    return try [ExtensionDeclSyntax("extension \(type.trimmed): TableObject") {}]
   }
 }
 
