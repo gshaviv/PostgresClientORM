@@ -13,7 +13,7 @@ public typealias StepBlock = (UUID) async throws -> Void
 public class Migrations {
   private var steps: [(String, StepBlock)] = []
   
-  public func addMigration(_ name: String, block: @escaping StepBlock) {
+  public func add(_ name: String, block: @escaping StepBlock) {
     steps.append((name, block))
   }
   
