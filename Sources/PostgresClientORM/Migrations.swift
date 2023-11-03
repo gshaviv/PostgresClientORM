@@ -8,12 +8,10 @@
 import Foundation
 import PostgresClientKit
 
-public typealias StepBlock = (UUID) async throws -> Void
-
 public class Migrations {
-  private var steps: [(String, StepBlock)] = []
+  private var steps: [(String, (UUID) async throws -> Void)] = []
   
-  public func add(_ name: String, block: @escaping StepBlock) {
+  public func add(_ name: String, block: @escaping (UUID) async throws -> Void) {
     steps.append((name, block))
   }
   
@@ -191,10 +189,9 @@ public struct TableDefinition {
     case drop
   }
 
-  var operation: Operation
   var columns: [ColumnDefinitation] = []
   
-  func sql() throws -> String {
+  func sql(operation: Operation) throws -> String {
     switch operation {
     case .create:
       var elements = [String]()
@@ -244,12 +241,24 @@ public struct TableDefinition {
       return elements.joined(separator: "\n")
     }
   }
+  
+  public func create(_ transaction: UUID) async throws {
+    try await DatabaseActor.shared.execute(sql(operation: .create), transaction: transaction)
+  }
+  
+  public func alter(_ transaction: UUID) async throws {
+    try await DatabaseActor.shared.execute(sql(operation: .alter), transaction: transaction)
+  }
+  
+  public func drop(_ transaction: UUID) async throws {
+    try await DatabaseActor.shared.execute(sql(operation: .drop), transaction: transaction)
+  }
 }
 
 public func column(_ name: String, type: ColumnType = .unknwon) -> ColumnDefinitation {
   ColumnDefinitation(name: name, type: type)
 }
 
-public func table(_ name: String, _ op: TableDefinition.Operation = .create, @ArrayBuilder<ColumnDefinitation> columns: () throws -> [ColumnDefinitation] = { [] }) rethrows -> TableDefinition {
-  try TableDefinition(name: name, operation: op, columns: columns())
+public func table(_ name: String, @ArrayBuilder<ColumnDefinitation> columns: () throws -> [ColumnDefinitation] = { [] }) rethrows -> TableDefinition {
+  try TableDefinition(name: name, columns: columns())
 }
