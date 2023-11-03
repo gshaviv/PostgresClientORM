@@ -47,6 +47,38 @@ public actor DatabaseActor {
 
     return items
   }
+  
+  public func execute<TYPE: Codable>(decode: TYPE.Type, _ sqlText: String, transaction id: UUID? = nil) async throws -> [TYPE] {
+    if let activeTransaction, activeTransaction.id != id {
+      try await activeTransaction.task.value
+    }
+
+    let connection = try await ConnectionGroup.shared.obtain()
+    defer {
+      ConnectionGroup.shared.release(connection: connection)
+    }
+
+    let statement = try connection.prepareStatement(text: sqlText)
+    let cursor = try statement.execute(retrieveColumnMetadata: true)
+    
+    guard let names = cursor.columns?.map(\.name) else {
+      return []
+    }
+    
+    var items = [TYPE]()
+    
+    for row in cursor {
+      let decoder = SQLDecoder(columns: names, row: try row.get())
+      let v = try decoder.decode(TYPE.self)
+      if let v = v as? any TableObject {
+        v.dbHash = try v.calculcateDbHash()
+      }
+      items.append(v)
+    }
+
+    return items
+  }
+
 
   public func execute(_ sqlText: String, transaction id: UUID? = nil) async throws {
     if let activeTransaction, activeTransaction.id != id {
