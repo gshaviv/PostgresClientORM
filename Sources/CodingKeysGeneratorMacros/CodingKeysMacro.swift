@@ -103,7 +103,8 @@ public struct TablePersistMacro: MemberMacro {
         continue
       }
       if idProperty.name.trimmingCharacters(in: .whitespaces) == name.trimmed.description {
-        initDecl.append("self._idHolder.value = try container.decode(\(type.trimmed).self, forKey: .\(cleanName))")
+        let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
+        initDecl.append("self._idHolder.value = try container.decode(\(baseType).self, forKey: .\(cleanName))")
       } else if type.is(OptionalTypeSyntax.self) {
         let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
         initDecl.append("self.\(cleanName) = try container.decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
