@@ -116,14 +116,14 @@ public struct ColumnDefinitation {
     return ColumnDefinitation(name: name, type: type, operation: .drop, constraints: constraints)
   }
   
-  public func rename(_ newName: String) throws -> Self {
+  public func rename(_ newName: ColumnName) throws -> Self {
     guard operation.isAdd else {
       throw TableObjectError.general("column operation for \(name) already specified")
     }
-    return ColumnDefinitation(name: name, type: type, operation: .rename(newName), constraints: constraints)
+    return ColumnDefinitation(name: name, type: type, operation: .rename(newName.name), constraints: constraints)
   }
   
-  public func alter(_ type: ColumnType) throws -> Self {
+  public func update(_ type: ColumnType) throws -> Self {
     guard operation.isAdd else {
       throw TableObjectError.general("column operation for \(name) already specified")
     }
@@ -246,7 +246,7 @@ public struct TableDefinition {
     try await DatabaseActor.shared.execute(sql(operation: .create), transaction: transaction)
   }
   
-  public func alter(_ transaction: UUID) async throws {
+  public func update(_ transaction: UUID) async throws {
     try await DatabaseActor.shared.execute(sql(operation: .alter), transaction: transaction)
   }
   
