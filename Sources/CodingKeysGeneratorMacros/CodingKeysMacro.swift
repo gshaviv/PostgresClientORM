@@ -14,22 +14,8 @@ public struct TablePersistMacro: MemberMacro {
                              message: GeneratorDiagnostic(message: "Need two arguments: key case type, track dirty", diagnosticID: .arguments, severity: .error)))
       return []
     }
-    
+
     let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, in: context)
-    let idPropertyList: [(id: String, name: String)] = try declaration.memberBlock.members.compactMap { member in
-      guard let variableDecl = member.decl.as(VariableDeclSyntax.self) else { return nil }
-      guard variableDecl.element(withIdentifier: "ID") != nil else { return nil }
-      guard let pname = variableDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.description else { return nil }
-      if let element = variableDecl.element(withIdentifier: "CodingKey") {
-        guard let customKeyName = element.customKey() else {
-          let diagnostic = Diagnostic(node: Syntax(node), message: CodingKeysDiagnostic())
-          throw DiagnosticsError(diagnostics: [diagnostic])
-        }
-        return (id: customKeyName.description.trimmingCharacters(in: CharacterSet(charactersIn: "\"")), name: pname)
-      }
-      return (id: pname, name: pname)
-    }
-    guard let idProperty = idPropertyList.first else { return [] }
 
     let members = declaration.memberBlock.members
       .flatMap { (memberDeclListItemSyntax: MemberBlockItemSyntax) in
@@ -48,8 +34,8 @@ public struct TablePersistMacro: MemberMacro {
         guard let syntax = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self), let property = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
           return nil
         }
-        
-        if let type = syntax.typeAnnotation?.type  {
+
+        if let type = syntax.typeAnnotation?.type {
           return (property, type.trimmed)
         } else if let initialValue = syntax.initializer?.as(InitializerClauseSyntax.self)?.value {
           let valueDescription = initialValue.description
@@ -70,26 +56,26 @@ public struct TablePersistMacro: MemberMacro {
             return (property, TypeSyntax(stringLiteral: call))
           }
           context.diagnose(.init(node: node, message: GeneratorDiagnostic(message: "Missing type annotation", diagnosticID: .general, severity: .error)))
-         fatalError()
+          fatalError()
         }
         return nil
       }
 
     // varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors.as(AccessorDeclListSyntax.self)
-    
+
     var initDecl = ["""
     init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     """]
-    
+
     var encodeDecl = ["""
     func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     """]
-    
+
     for (name, type) in members {
       let cleanName = name.description.trimmingCharacters(in: CharacterSet(charactersIn: "` "))
-      if  type.is(OptionalTypeSyntax.self) {
+      if type.is(OptionalTypeSyntax.self) {
         encodeDecl.append("try container.encodeIfPresent(self.\(cleanName), forKey: .\(cleanName))")
       } else if type.description == "Children" {
         encodeDecl.append("if !(encoder is SQLEncoder) {")
@@ -98,17 +84,17 @@ public struct TablePersistMacro: MemberMacro {
       } else {
         encodeDecl.append("try container.encode(self.\(cleanName), forKey: .\(cleanName))")
       }
-      
+
       if type.description == "Children" {
         continue
       }
-      if idProperty.name.trimmingCharacters(in: .whitespaces) == name.trimmed.description {
+      if name.trimmed.description == "id" {
         let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
         initDecl.append("self._idHolder.value = try container.decode(\(baseType).self, forKey: .\(cleanName))")
       } else if type.is(OptionalTypeSyntax.self) {
         let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
         initDecl.append("self.\(cleanName) = try container.decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
-       } else {
+      } else {
         initDecl.append("self.\(cleanName) = try container.decode(\(type.trimmed).self, forKey: .\(cleanName))")
       }
     }
@@ -118,7 +104,7 @@ public struct TablePersistMacro: MemberMacro {
     return codingKeys + ["typealias Key = CodingKeys",
                          DeclSyntax(stringLiteral: initDecl.joined(separator: "\n")),
                          DeclSyntax(stringLiteral: encodeDecl.joined(separator: "\n")),
-                         DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.\(idProperty.id.trimmingCharacters(in: .whitespaces))) }")] +
+                         DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }")] +
       (generateDbHash == "true" ? [
         "@DBHash var dbHash: Int?"
       ] : [])
@@ -305,33 +291,33 @@ private extension AttributeListSyntax.Element {
   }
 }
 
-//struct Delme: Codable {
+// struct Delme: Codable {
 //  var id: Int
 //  var other: UUID?
 //  var `protocol`: Int = 43
-//  
+//
 //  init(from decoder: Decoder) throws {
 //    let container = try decoder.container(keyedBy: CodingKeys.self)
 //    self.id = try container.decode(Int.self, forKey: .id)
 //    self.other = try container.decodeIfPresent(UUID.self, forKey: .other)
 //    self.protocol = try container.decode(Int.self, forKey: .protocol)
 //  }
-//  
+//
 //  enum CodingKeys: CodingKey {
 //    case id
 //    case other
 //    case `protocol`
 //  }
-//  
+//
 //  func encode(to encoder: Encoder) throws {
 //    var container = encoder.container(keyedBy: CodingKeys.self)
 //    try container.encode(self.id, forKey: .id)
 //    try container.encodeIfPresent(self.other, forKey: .other)
 //    try container.encode(self.protocol, forKey: .protocol)
 //    if !(encoder is SQLEncoder), true {
-//      
+//
 //    }
 //  }
-//}
+// }
 //
-//class SQLEncoder {}
+// class SQLEncoder {}
