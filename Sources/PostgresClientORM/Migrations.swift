@@ -39,7 +39,7 @@ public class Migrations {
   public init() {}
 }
 
-@TablePersist(.camelCase, trackDirty: false)
+@TableObject(.camelCase, trackDirty: false)
 struct PerformedMigration: Hashable {
   static var tableName = "_Migrations"
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {

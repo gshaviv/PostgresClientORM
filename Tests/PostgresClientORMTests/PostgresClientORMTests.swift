@@ -7,7 +7,7 @@ let testMacros: [String: Macro.Type] = [
     "CodingKeys": CodingKeysMacro.self,
     "CodingKey": CustomCodingKeyMacro.self,
     "CodingKeyIgnored": CodingKeyIgnoredMacro.self,
-    "TablePersist": TablePersistMacro.self,
+    "TableObject": TablePersistMacro.self,
     "ID": IDMacro.self
 ]
 
@@ -47,7 +47,7 @@ struct Entity {
   
   func testTablePersistMacros() {
       let source = """
-@TablePersist(.snakeCase, trackDirty: true)
+@TableObject(.snakeCase, trackDirty: true)
 struct Entity {
   lazy var planets = Children(of: self, ofType: Planet.self, parent: .star)
   var otherClass = Classic()
