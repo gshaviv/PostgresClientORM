@@ -37,6 +37,8 @@ public class Migrations {
       }
     }
   }
+  
+  public init() {}
 }
 
 @TablePersist(.camelCase, trackDirty: false)
