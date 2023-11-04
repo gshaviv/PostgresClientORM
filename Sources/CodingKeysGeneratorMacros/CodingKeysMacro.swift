@@ -7,7 +7,7 @@ import SwiftSyntaxMacros
 public struct TablePersistMacro: MemberMacro {
   public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
     guard case let .argumentList(arguments) = node.arguments,
-          arguments.count == 4,
+          arguments.count > 3,
           let generateDbHash = arguments.last?.expression.description,
           let idType = arguments[arguments.index(arguments.startIndex, offsetBy: 2)].expression.description.components(separatedBy: ".").first
     else {
@@ -15,8 +15,15 @@ public struct TablePersistMacro: MemberMacro {
                              message: GeneratorDiagnostic(message: "Need three arguments: key case type, table name, idType, track dirty", diagnosticID: .arguments, severity: .error)))
       return []
     }
-    let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, in: context)
     let tableName = arguments[arguments.index(after: arguments.startIndex)].expression
+    let idName: TokenSyntax?
+    if arguments.count == 5 {
+      idName = TokenSyntax(stringLiteral: arguments[arguments.index(arguments.startIndex, offsetBy: 3)].expression.description.trimmingCharacters(in: CharacterSet(charactersIn: "\" ")))
+    } else {
+      idName = nil
+    }
+    
+    let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, customId: idName?.description, in: context)
     
     let isStruct: Bool
     switch declaration.kind {
@@ -46,10 +53,8 @@ public struct TablePersistMacro: MemberMacro {
           return nil
         } else if varDecl.bindingSpecifier.description.contains("let"), let binding = varDecl.bindings.first?.as(PatternBindingSyntax.self), binding.initializer != nil {
           return nil
-        } else if let accessors = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors {
-          if accessors.as(AccessorDeclListSyntax.self)?.contains(where: { $0.accessorSpecifier.description.hasPrefix("get") }) == true ||  accessors.as(AccessorDeclListSyntax.self) == nil {
+        } else if let accessors = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors, (accessors.as(AccessorDeclListSyntax.self)?.contains(where: { $0.accessorSpecifier.description.hasPrefix("get") }) == true || accessors.as(AccessorDeclListSyntax.self) == nil) {
             return nil
-          }
         }
         guard let syntax = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self), let property = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
           return nil
@@ -163,6 +168,12 @@ extension TablePersistMacro: ExtensionMacro {
 public struct CodingKeysMacro: MemberMacro {
   public static func expansion(of node: AttributeSyntax,
                                providingMembersOf declaration: some DeclGroupSyntax,
+                               in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+      try expansion(of: node, providingMembersOf: declaration, customId: nil, in: context)
+  }
+  public static func expansion(of node: AttributeSyntax,
+                               providingMembersOf declaration: some DeclGroupSyntax,
+                               customId: String?,
                                in context: some MacroExpansionContext) throws -> [DeclSyntax]
   {
     guard case let .argumentList(arguments) = node.arguments,
@@ -221,7 +232,7 @@ public struct CodingKeysMacro: MemberMacro {
         }
         return raw == keyValue ? "case \(property)" : "case \(property) = \"\(keyValue)\""
       }
-    } + ["case id"]
+    } + [customId == nil ? "case id" : "case id = \"\(customId ?? "")\""]
     guard !cases.isEmpty else { return [] }
     let casesDecl: DeclSyntax = """
     enum CodingKeys: String, CodingKey, CaseIterable {

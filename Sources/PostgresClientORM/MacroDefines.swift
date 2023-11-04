@@ -8,7 +8,7 @@ public macro CodingKeys(_ type: KeyType) = #externalMacro(module: "CodingKeysGen
 
 @attached(member, names: named(CodingKeys), named(Key), named(idColumn), named(id), named(_idHolder), named(dbHash), named(init(from:)), named(encode(to:)), named(tableName))
 @attached(extension, conformances: TableObject)
-public macro TableObject(keys: KeyType, table: String, idType: Any.Type, trackDirty: Bool) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "TablePersistMacro")
+public macro TableObject(keys: KeyType, table: String, idType: Any.Type, idName: String = "id", trackDirty: Bool) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "TablePersistMacro")
 
 @attached(peer)
 public macro CodingKey(custom: String) = #externalMacro(

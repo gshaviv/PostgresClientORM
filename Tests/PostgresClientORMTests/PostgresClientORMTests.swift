@@ -47,7 +47,7 @@ struct Entity {
   
   func testTablePersistMacros() {
       let source = """
-@TableObject(.snakeCase, table: "entities", idType: String.self, trackDirty: true)
+@TableObject(.snakeCase, table: "entities", idType: String.self, idName: "entity_id", trackDirty: true)
 struct Entity {
   var planets = Children(of: self, ofType: Planet.self, parent: .star)
   var otherClass = Classic()
@@ -83,7 +83,7 @@ struct Entity {
         case currentValue = "entity_value"
         case count
         case `protocol`
-        case id
+        case id = "entity_id"
     }
 
     typealias Key = CodingKeys
