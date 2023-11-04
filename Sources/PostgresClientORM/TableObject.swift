@@ -10,7 +10,7 @@ import PostgresClientKit
 
 public protocol TableObject: Codable, FieldGroup {
   static var tableName: String { get }
-  associatedtype IDType: PostgresValueConvertible
+  associatedtype IDType: PostgresValueConvertible & Codable
   var id: Self.IDType? { get nonmutating set }
   var dbHash: Int? { get nonmutating set }
   static var idColumn: ColumnName { get }

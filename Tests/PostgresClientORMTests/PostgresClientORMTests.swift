@@ -1,4 +1,6 @@
-import CodingKeysGeneratorMacros
+@testable import CodingKeysGeneratorMacros
+@testable import PostgresClientORM
+import PostgresClientKit
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
@@ -135,5 +137,19 @@ struct Entity {
 """
       assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
+  
+  func testParentDecoding() throws {
+    let decoder = SQLDecoder(columnMap: ["parent": 0], values: [PostgresValue("13")])
+    let c = try decoder.decode(Child.self)
+    XCTAssert(c.parent.id == 13)
+  }
 }
 
+@TableObject(keys: .camelCase, table: "xxx", idType: Int.self, trackDirty: false)
+struct Papa {
+  var c1 = 1
+}
+
+struct Child: Decodable {
+  var parent: Parent<Papa>
+}

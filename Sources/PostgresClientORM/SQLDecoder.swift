@@ -267,7 +267,7 @@ private struct SQLKeyedDecodingContainer<K: CodingKey>: KeyedDecodingContainerPr
       guard let str = String(data: data, encoding: .utf8) else {
         throw TableObjectError.general("Invalied data for key: \(key.stringValue)")
       }
-      if !str.hasPrefix("{") || !str.hasPrefix("["), let data = "\"\(str)\"".data(using: .utf8) {
+      if !str.hasPrefix("{") || !str.hasPrefix("["), Double(str) == nil, let data = "\"\(str)\"".data(using: .utf8) {
         return try JSONDecoder().decode(type, from: data)
       }
       return try JSONDecoder().decode(type, from: data)

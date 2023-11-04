@@ -63,3 +63,41 @@ public class Children<Child: TableObject>: Sequence {
     values.makeIterator()
   }
 }
+
+public class Parent<DAD: TableObject>: Codable {
+  var parentID: DAD.IDType
+  var parent: DAD?
+  
+  init(id: DAD.IDType) {
+    self.parentID = id
+    self.parent = nil
+  }
+  
+  init(parent: DAD) throws {
+    self.parent = parent
+    if let id = parent.id {
+      self.parentID = id
+    } else {
+      throw TableObjectError.general("parent Id == nil")
+    }
+  }
+  
+  public required init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    self.parentID = try container.decode(DAD.IDType.self)
+  }
+  
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(parentID)
+  }
+  
+  var value: DAD? { parent }
+  var id: DAD.IDType? { parentID }
+  var type: DAD.Type { DAD.self }
+  
+  func get() async throws {
+    guard parent == nil else { return }
+    parent = try await DAD.fetch(id: parentID)
+  }
+}
