@@ -39,9 +39,8 @@ public class Migrations {
   public init() {}
 }
 
-@TableObject(.camelCase, idType: String.self, trackDirty: false)
+@TableObject(keys: .camelCase, table: "_Migrations", idType: String.self, trackDirty: false)
 struct PerformedMigration: Hashable {
-  static var tableName = "_Migrations"
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {
     lhs.id == rhs.id
   }
