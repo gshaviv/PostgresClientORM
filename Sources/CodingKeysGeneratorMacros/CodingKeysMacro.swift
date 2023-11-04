@@ -16,14 +16,14 @@ public struct TablePersistMacro: MemberMacro {
       return []
     }
     let tableName = arguments[arguments.index(after: arguments.startIndex)].expression
-    let idName: TokenSyntax?
+    let idName: TokenSyntax
     if arguments.count == 5 {
       idName = TokenSyntax(stringLiteral: arguments[arguments.index(arguments.startIndex, offsetBy: 3)].expression.description.trimmingCharacters(in: CharacterSet(charactersIn: "\" ")))
     } else {
-      idName = nil
+      idName = TokenSyntax(stringLiteral: "id")
     }
     
-    let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, customId: idName?.description, in: context)
+    let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, customId: idName.description, in: context)
     
     let isStruct: Bool
     switch declaration.kind {
@@ -201,7 +201,7 @@ public struct CodingKeysMacro: MemberMacro {
           .first
       }
 
-    let cases: [String] = try declaration.memberBlock.members.compactMap { member in
+    var cases: [String] = try declaration.memberBlock.members.compactMap { member in
       guard let variableDecl = member.decl.as(VariableDeclSyntax.self) else { return nil }
       guard let property = variableDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
       else {
@@ -232,7 +232,10 @@ public struct CodingKeysMacro: MemberMacro {
         }
         return raw == keyValue ? "case \(property)" : "case \(property) = \"\(keyValue)\""
       }
-    } + [customId == nil ? "case id" : "case id = \"\(customId ?? "")\""]
+    }
+    if let customId {
+      cases = cases + [customId == "id" ? "case id" : "case id = \"\(customId)\""]
+    }
     guard !cases.isEmpty else { return [] }
     let casesDecl: DeclSyntax = """
     enum CodingKeys: String, CodingKey, CaseIterable {
