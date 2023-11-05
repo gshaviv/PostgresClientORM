@@ -80,12 +80,12 @@ public class Parent<DAD: TableObject>: Codable {
   public var id: DAD.IDType
   public var value: DAD?
     
-  init(id: DAD.IDType) {
+  public init(id: DAD.IDType) {
     self.id = id
     self.value = nil
   }
   
-  init(value: DAD) throws {
+  public init(value: DAD) throws {
     self.value = value
     if let id = value.id {
       self.id = id
