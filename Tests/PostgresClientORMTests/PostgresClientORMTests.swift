@@ -52,6 +52,7 @@ struct Entity {
 @TableObject(.snakeCase, table: "entities", idType: String.self, idName: "entity_id", trackDirty: true)
 struct Entity {
   var planets = Children(of: self, ofType: Planet.self, parent: .star)
+  var galaxy: Parent<Galaxy>
   var otherClass = Classic()
   var accesssedVar: Int  {
   get {
@@ -71,6 +72,7 @@ struct Entity {
 
 struct Entity {
   var planets = Children(of: self, ofType: Planet.self, parent: .star)
+  var galaxy: Parent<Galaxy>
   var otherClass = Classic()
   var accesssedVar: Int  {
   get {
@@ -85,6 +87,7 @@ struct Entity {
 
     enum Columns: String, CodingKey, CaseIterable {
         case planets
+        case galaxy
         case otherClass = "other_class"
         case currentValue = "current_value"
         case foo
@@ -95,8 +98,8 @@ struct Entity {
 
     init(row: RowReader) throws {
         let container = try row.container(keyedBy: Columns.self)
+        self.galaxy = try container.decode(Parent<Galaxy>.self, forKey: .galaxy)
         self.otherClass = try container.decode(Classic.self, forKey: .otherClass)
-        self.accesssedVar = try container.decode(Int.self, forKey: .accesssedVar)
         self.currentValue = try container.decode(Int.self, forKey: .currentValue)
         self.foo = try container.decode(Bool.self, forKey: .foo)
         self.count = try container.decode(Int.self, forKey: .count)
@@ -106,11 +109,8 @@ struct Entity {
 
     func encode(row: RowWriter) throws {
         var container = row.container(keyedBy: Columns.self)
-        if !(encoder is SQLEncoder) {
-            try container.encodeIfPresent(self.planets.loadedValues, forKey: .planets)
-        }
+        try container.encode(self.galaxy, forKey: .galaxy)
         try container.encode(self.otherClass, forKey: .otherClass)
-        try container.encode(self.accesssedVar, forKey: .accesssedVar)
         try container.encode(self.currentValue, forKey: .currentValue)
         try container.encode(self.foo, forKey: .foo)
         try container.encode(self.count, forKey: .count)

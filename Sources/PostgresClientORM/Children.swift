@@ -8,7 +8,7 @@
 import Foundation
 import PostgresClientKit
 
-public class Children<Child: TableObject>: Sequence {
+public class Children<Child: TableObject>: Sequence, Codable {
   public typealias AsyncIterator = Children<Child>
   public typealias Element = Child
   public let referencingColumn: Child.Columns
@@ -20,6 +20,18 @@ public class Children<Child: TableObject>: Sequence {
     self.referencingColumn = childCol
     self.sortKey = sortBy
     self.sortDir = order
+  }
+  
+  public required init(from decoder: Decoder) throws {
+    throw TableObjectError.general("Can't decode chiclren")
+  }
+  
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    guard let values = values as? any Encodable else {
+      throw TableObjectError.general("Children type must be encodable")
+    }
+    try container.encode(values)
   }
   
   public var values: [Child] {
