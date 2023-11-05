@@ -25,10 +25,11 @@ public extension TableObject {
     SQLQuery(base: "DELETE FROM \(tableName)")
   }
 
-  func delete() -> SQLQuery<Self> {
-    Self.delete().where {
+  func delete() async throws  {
+    try await Self.delete().where {
       Self.idColumn == id
     }
+    .execute()
   }
 
   static func count() -> SQLQuery<CountRetrieval> {
