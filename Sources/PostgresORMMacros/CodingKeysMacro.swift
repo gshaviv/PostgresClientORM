@@ -161,7 +161,7 @@ public struct CodingKeysMacro: MemberMacro {
           return nil
         } else if varDecl.bindingSpecifier.description.contains("let"), let binding = varDecl.bindings.first?.as(PatternBindingSyntax.self), binding.initializer != nil {
           return nil
-        } else if let accessors = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors, accessors.as(AccessorDeclListSyntax.self)?.contains(where: { $0.accessorSpecifier.description.hasPrefix("get") }) == true || accessors.as(AccessorDeclListSyntax.self) == nil {
+        } else if let accessors = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors, accessors.as(AccessorDeclListSyntax.self)?.contains(where: { $0.accessorSpecifier.description.trimmingCharacters(in: .whitespaces).hasPrefix("get") }) == true || accessors.as(AccessorDeclListSyntax.self) == nil {
           return nil
         }
         guard let syntax = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self), let property = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier else {

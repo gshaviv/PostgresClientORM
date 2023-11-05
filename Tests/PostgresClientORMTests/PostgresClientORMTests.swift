@@ -53,8 +53,10 @@ struct Entity {
 struct Entity {
   var planets = Children(of: self, ofType: Planet.self, parent: .star)
   var otherClass = Classic()
-  var accesssedVar:Int  {
-  get { 0 }
+  var accesssedVar: Int  {
+  get {
+    0
+  }
   set { accesssedVar = newValue }
   }
   @CodingKey(custom: "entity_value")
@@ -70,8 +72,10 @@ struct Entity {
 struct Entity {
   var planets = Children(of: self, ofType: Planet.self, parent: .star)
   var otherClass = Classic()
-  var accesssedVar:Int  {
-  get { 0 }
+  var accesssedVar: Int  {
+  get {
+    0
+  }
   set { accesssedVar = newValue }
   }
   let currentValue: Int
@@ -90,7 +94,7 @@ struct Entity {
     }
 
     init(row: RowReader) throws {
-        let container = try row.container(keyedBy: CodingKeys.self)
+        let container = try row.container(keyedBy: Columns.self)
         self.otherClass = try container.decode(Classic.self, forKey: .otherClass)
         self.accesssedVar = try container.decode(Int.self, forKey: .accesssedVar)
         self.currentValue = try container.decode(Int.self, forKey: .currentValue)
@@ -101,7 +105,7 @@ struct Entity {
     }
 
     func encode(row: RowWriter) throws {
-        var container = row.container(keyedBy: CodingKeys.self)
+        var container = row.container(keyedBy: Columns.self)
         if !(encoder is SQLEncoder) {
             try container.encodeIfPresent(self.planets.loadedValues, forKey: .planets)
         }
