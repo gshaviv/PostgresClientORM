@@ -19,7 +19,7 @@ let package = Package(
   ],
   targets: [
     .macro(
-      name: "CodingKeysGeneratorMacros",
+      name: "PostgresORMMacros",
       dependencies: [
         .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
         .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
@@ -28,7 +28,7 @@ let package = Package(
       name: "PostgresClientORM",
       dependencies: [
         .product(name: "PostgresClientKit", package: "PostgresClientKit"),
-        "CodingKeysGeneratorMacros",
+        "PostgresORMMacros",
       ]),
     .testTarget(
       name: "PostgresClientORMTests",

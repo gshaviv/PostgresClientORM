@@ -22,9 +22,9 @@ public struct TablePersistMacro: MemberMacro {
     } else {
       idName = TokenSyntax(stringLiteral: "id")
     }
-    
-    let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, customId: idName.description, in: context)
-    
+
+    let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, customId: idName.description, idType: idType, in: context)
+
     let isStruct: Bool
     switch declaration.kind {
     case .classDecl:
@@ -42,94 +42,9 @@ public struct TablePersistMacro: MemberMacro {
       return []
     }
 
-    let members = declaration.memberBlock.members
-      .flatMap { (memberDeclListItemSyntax: MemberBlockItemSyntax) in
-        memberDeclListItemSyntax
-          .children(viewMode: .fixedUp)
-          .compactMap { $0.as(VariableDeclSyntax.self) }
-      }
-      .compactMap { (varDecl: VariableDeclSyntax) -> (TokenSyntax, TypeSyntax)? in
-        if varDecl.modifiers.description.contains("static") {
-          return nil
-        } else if varDecl.bindingSpecifier.description.contains("let"), let binding = varDecl.bindings.first?.as(PatternBindingSyntax.self), binding.initializer != nil {
-          return nil
-        } else if let accessors = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors, (accessors.as(AccessorDeclListSyntax.self)?.contains(where: { $0.accessorSpecifier.description.hasPrefix("get") }) == true || accessors.as(AccessorDeclListSyntax.self) == nil) {
-            return nil
-        }
-        guard let syntax = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self), let property = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
-          return nil
-        }
 
-        if let type = syntax.typeAnnotation?.type {
-          return (property, type.trimmed)
-        } else if let initialValue = syntax.initializer?.as(InitializerClauseSyntax.self)?.value {
-          let valueDescription = initialValue.description
-          if valueDescription.hasPrefix("\"") {
-            return (property, "String")
-          }
-          let valueChars = CharacterSet(charactersIn: valueDescription)
-          if CharacterSet(charactersIn: "-0123456789_").isSuperset(of: valueChars) {
-            return (property, "Int")
-          }
-          if CharacterSet(charactersIn: "-0123456789.e_").isSuperset(of: valueChars) {
-            return (property, "Double")
-          }
-          if valueDescription.trimmingCharacters(in: .whitespaces) == "false" || valueDescription.trimmingCharacters(in: .whitespaces) == "true" {
-            return (property, "Bool")
-          }
-          if let call = initialValue.as(FunctionCallExprSyntax.self)?.calledExpression.description, call[call.startIndex].isUppercase {
-            return (property, TypeSyntax(stringLiteral: call))
-          }
-          context.diagnose(.init(node: node, message: GeneratorDiagnostic(message: "Missing type annotation", diagnosticID: .general, severity: .error)))
-          fatalError()
-        }
-        return nil
-      } + [(TokenSyntax(stringLiteral: "id"), TypeSyntax(stringLiteral: idType))]
 
-    // varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors.as(AccessorDeclListSyntax.self)
-
-    var initDecl = ["""
-    init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    """]
-
-    var encodeDecl = ["""
-    func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
-    """]
-
-    for (name, type) in members {
-      let cleanName = name.description.trimmingCharacters(in: CharacterSet(charactersIn: "` "))
-      if type.is(OptionalTypeSyntax.self) {
-        encodeDecl.append("try container.encodeIfPresent(self.\(cleanName), forKey: .\(cleanName))")
-      } else if type.description == "Children" {
-        encodeDecl.append("if !(encoder is SQLEncoder) {")
-        encodeDecl.append("try container.encodeIfPresent(self.\(cleanName).loadedValues, forKey: .\(cleanName))")
-        encodeDecl.append("}")
-      } else {
-        encodeDecl.append("try container.encode(self.\(cleanName), forKey: .\(cleanName))")
-      }
-
-      if type.description == "Children" {
-        continue
-      }
-      if name.trimmed.description == "id", isStruct {
-        let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
-        initDecl.append("self._idHolder.value = try container.decode(\(baseType).self, forKey: .\(cleanName))")
-      } else if type.is(OptionalTypeSyntax.self) {
-        let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
-        initDecl.append("self.\(cleanName) = try container.decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
-      } else {
-        initDecl.append("self.\(cleanName) = try container.decode(\(type.trimmed).self, forKey: .\(cleanName))")
-      }
-    }
-    initDecl.append("}")
-    encodeDecl.append("}")
-
-    return codingKeys + ["typealias Key = CodingKeys",
-                         "static var tableName = \(tableName)",
-                         DeclSyntax(stringLiteral: initDecl.joined(separator: "\n")),
-                         DeclSyntax(stringLiteral: encodeDecl.joined(separator: "\n")),
+    return codingKeys + ["static var tableName = \(tableName)",
                          DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }")] +
       (generateDbHash == "true" ? [
         "@DBHash var dbHash: Int?"
@@ -165,15 +80,30 @@ extension TablePersistMacro: ExtensionMacro {
   }
 }
 
+extension CodingKeysMacro: ExtensionMacro {
+  public static func expansion(of node: AttributeSyntax,
+                               attachedTo declaration: some DeclGroupSyntax,
+                               providingExtensionsOf type: some TypeSyntaxProtocol,
+                               conformingTo protocols: [TypeSyntax], in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax]
+  {
+    guard !protocols.isEmpty else {
+      return []
+    }
+    return try [ExtensionDeclSyntax("extension \(type.trimmed): FieldCodable") {}]
+  }
+}
+
 public struct CodingKeysMacro: MemberMacro {
   public static func expansion(of node: AttributeSyntax,
                                providingMembersOf declaration: some DeclGroupSyntax,
-                               in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-      try expansion(of: node, providingMembersOf: declaration, customId: nil, in: context)
+                               in context: some MacroExpansionContext) throws -> [DeclSyntax]
+  {
+    try self.expansion(of: node, providingMembersOf: declaration, customId: nil, idType: "", in: context)
   }
+
   public static func expansion(of node: AttributeSyntax,
                                providingMembersOf declaration: some DeclGroupSyntax,
-                               customId: String?,
+                               customId: String?, idType: String,
                                in context: some MacroExpansionContext) throws -> [DeclSyntax]
   {
     guard case let .argumentList(arguments) = node.arguments,
@@ -181,6 +111,23 @@ public struct CodingKeysMacro: MemberMacro {
     else {
       context.diagnose(.init(node: node,
                              message: GeneratorDiagnostic(message: "Missing arguments: key case type, track dirty", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
+
+    let isStruct: Bool
+    switch declaration.kind {
+    case .classDecl:
+      isStruct = false
+      if !declaration.description.contains("final") {
+        context.diagnose(.init(node: node,
+                               message: GeneratorDiagnostic(message: "@TableObject classes must be declared final", diagnosticID: .arguments, severity: .error)))
+        return []
+      }
+    case .structDecl:
+      isStruct = true
+    default:
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "@TableObject can be attached only to final class or struct", diagnosticID: .arguments, severity: .error)))
       return []
     }
 
@@ -201,6 +148,90 @@ public struct CodingKeysMacro: MemberMacro {
           .first
       }
 
+    let members = declaration.memberBlock.members
+      .flatMap { (memberDeclListItemSyntax: MemberBlockItemSyntax) in
+        memberDeclListItemSyntax
+          .children(viewMode: .fixedUp)
+          .compactMap { $0.as(VariableDeclSyntax.self) }
+      }
+      .compactMap { (varDecl: VariableDeclSyntax) -> (TokenSyntax, TypeSyntax)? in
+        if varDecl.modifiers.description.contains("static") {
+          return nil
+        } else if varDecl.element(withIdentifier: "ColumnIgnored") != nil {
+          return nil
+        } else if varDecl.bindingSpecifier.description.contains("let"), let binding = varDecl.bindings.first?.as(PatternBindingSyntax.self), binding.initializer != nil {
+          return nil
+        } else if let accessors = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self)?.accessorBlock?.accessors, accessors.as(AccessorDeclListSyntax.self)?.contains(where: { $0.accessorSpecifier.description.hasPrefix("get") }) == true || accessors.as(AccessorDeclListSyntax.self) == nil {
+          return nil
+        }
+        guard let syntax = varDecl.bindings.as(PatternBindingListSyntax.self)?.first?.as(PatternBindingSyntax.self), let property = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
+          return nil
+        }
+
+        if let type = syntax.typeAnnotation?.type {
+          return (property, type.trimmed)
+        } else if let initialValue = syntax.initializer?.as(InitializerClauseSyntax.self)?.value {
+          let valueDescription = initialValue.description
+          if valueDescription.hasPrefix("\"") {
+            return (property, "String")
+          }
+          let valueChars = CharacterSet(charactersIn: valueDescription)
+          if CharacterSet(charactersIn: "-0123456789_").isSuperset(of: valueChars) {
+            return (property, "Int")
+          }
+          if CharacterSet(charactersIn: "-0123456789.e_").isSuperset(of: valueChars) {
+            return (property, "Double")
+          }
+          if valueDescription.trimmingCharacters(in: .whitespaces) == "false" || valueDescription.trimmingCharacters(in: .whitespaces) == "true" {
+            return (property, "Bool")
+          }
+          if let call = initialValue.as(FunctionCallExprSyntax.self)?.calledExpression.description, call[call.startIndex].isUppercase {
+            return (property, TypeSyntax(stringLiteral: call))
+          }
+          context.diagnose(.init(node: node, message: GeneratorDiagnostic(message: "Missing type annotation", diagnosticID: .general, severity: .error)))
+          fatalError()
+        }
+        return nil
+      } + (customId != nil ? [(TokenSyntax(stringLiteral: "id"), TypeSyntax(stringLiteral: idType))] : [])
+
+    var initDecl = ["""
+    init(row: RowReader) throws {
+    let container = try row.container(keyedBy: Columns.self)
+    """]
+
+    var encodeDecl = ["""
+    func encode(row: RowWriter) throws {
+    var container = row.container(keyedBy: Columns.self)
+    """]
+
+    for (name, type) in members {
+      let cleanName = name.description.trimmingCharacters(in: CharacterSet(charactersIn: "` "))
+      if type.is(OptionalTypeSyntax.self) {
+        encodeDecl.append("try container.encodeIfPresent(self.\(cleanName), forKey: .\(cleanName))")
+      } else if type.description == "Children" {
+        encodeDecl.append("if !(encoder is SQLEncoder) {")
+        encodeDecl.append("try container.encodeIfPresent(self.\(cleanName).loadedValues, forKey: .\(cleanName))")
+        encodeDecl.append("}")
+      } else {
+        encodeDecl.append("try container.encode(self.\(cleanName), forKey: .\(cleanName))")
+      }
+
+      if type.description == "Children" {
+        continue
+      }
+      if name.trimmed.description == "id", isStruct {
+        let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
+        initDecl.append("self._idHolder.value = try container.decode(\(baseType).self, forKey: .\(cleanName))")
+      } else if type.is(OptionalTypeSyntax.self) {
+        let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
+        initDecl.append("self.\(cleanName) = try container.decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
+      } else {
+        initDecl.append("self.\(cleanName) = try container.decode(\(type.trimmed).self, forKey: .\(cleanName))")
+      }
+    }
+    initDecl.append("}")
+    encodeDecl.append("}")
+
     var cases: [String] = try declaration.memberBlock.members.compactMap { member in
       guard let variableDecl = member.decl.as(VariableDeclSyntax.self) else { return nil }
       guard let property = variableDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
@@ -213,13 +244,14 @@ public struct CodingKeysMacro: MemberMacro {
           return nil
         }
       }
-      if variableDecl.element(withIdentifier: "CodingKeyIgnored") != nil {
+      if variableDecl.element(withIdentifier: "ColumnIgnored") != nil {
         return nil
       } else if staticMemberNames.contains(where: { $0 == property }) {
         return nil
-      } else if let element = variableDecl.element(withIdentifier: "CodingKey") {
+      } else if let element = variableDecl.element(withIdentifier: "Column") {
         guard let customKeyName = element.customKey() else {
           let diagnostic = Diagnostic(node: Syntax(node), message: CodingKeysDiagnostic())
+          context.diagnose(diagnostic)
           throw DiagnosticsError(diagnostics: [diagnostic])
         }
         return property == "\(customKeyName)" ? "case \(property)" : "case \(property) = \(customKeyName)"
@@ -238,11 +270,15 @@ public struct CodingKeysMacro: MemberMacro {
     }
     guard !cases.isEmpty else { return [] }
     let casesDecl: DeclSyntax = """
-    enum CodingKeys: String, CodingKey, CaseIterable {
+    enum Columns: String, CodingKey, CaseIterable {
         \(raw: cases.joined(separator: "\n    "))
     }
     """
-    return [casesDecl]
+    return [
+      casesDecl,
+      DeclSyntax(stringLiteral: initDecl.joined(separator: "\n")),
+      DeclSyntax(stringLiteral: encodeDecl.joined(separator: "\n"))
+    ]
   }
 }
 

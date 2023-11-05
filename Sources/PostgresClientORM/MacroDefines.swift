@@ -3,22 +3,23 @@ public enum KeyType {
   case snakeCase
 }
 
-@attached(member, names: named(CodingKeys))
-public macro CodingKeys(_ type: KeyType) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "CodingKeysMacro")
+@attached(member, names: named(Columns), named(init(row:)), named(encode(row:)))
+@attached(extension, conformances: FieldCodable)
+public macro Columns(_ type: KeyType) = #externalMacro(module: "PostgresORMMacros", type: "CodingKeysMacro")
 
-@attached(member, names: named(CodingKeys), named(Key), named(idColumn), named(id), named(_idHolder), named(dbHash), named(init(from:)), named(encode(to:)), named(tableName))
+@attached(member, names: named(idColumn), named(id), named(Columns), named(_idHolder), named(dbHash), named(init(row:)), named(encode(row:)), named(tableName))
 @attached(extension, conformances: TableObject)
-public macro TableObject(keys: KeyType, table: String, idType: Any.Type, idName: String = "id", trackDirty: Bool) = #externalMacro(module: "CodingKeysGeneratorMacros", type: "TablePersistMacro")
+public macro TableObject(columns: KeyType, table: String, idType: Any.Type, idName: String = "id", trackDirty: Bool) = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
 
 @attached(peer)
-public macro CodingKey(custom: String) = #externalMacro(
-    module: "CodingKeysGeneratorMacros",
+public macro Column(name: String) = #externalMacro(
+    module: "PostgresORMMacros",
     type: "CustomCodingKeyMacro"
 )
 
 @attached(peer)
-public macro CodingKeyIgnored() = #externalMacro(module: "CodingKeysGeneratorMacros", type: "CodingKeyIgnoredMacro")
+public macro ColumnIgnored() = #externalMacro(module: "PostgresORMMacros", type: "CodingKeyIgnoredMacro")
 
 //@attached(accessor, names: named(get), named(set))
 //@attached(peer, names: named(_idHolder))
-//public macro ID() = #externalMacro(module: "CodingKeysGeneratorMacros", type: "IDMacro")
+//public macro ID() = #externalMacro(module: "PostgresORMMacros", type: "IDMacro")

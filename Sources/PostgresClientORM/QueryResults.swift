@@ -8,7 +8,7 @@
 import Foundation
 import PostgresClientKit
 
-public struct QueryResults<Type: Codable>: Sequence, IteratorProtocol {
+public struct QueryResults<Type: FieldCodable>: Sequence, IteratorProtocol {
   private let connection: Connection
   private let statement: Statement
   private let cursor: Cursor
@@ -37,7 +37,7 @@ public struct QueryResults<Type: Codable>: Sequence, IteratorProtocol {
     switch result {
     case let .success(row):
       do {
-        let decoder = SQLDecoder(columns: names, row: row)
+        let decoder = RowReader(columns: names, row: row)
         let v = try decoder.decode(Type.self)
         if let v = v as? any TableObject {
           v.dbHash = try v.calculcateDbHash()

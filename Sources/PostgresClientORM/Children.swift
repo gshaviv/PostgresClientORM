@@ -11,12 +11,12 @@ import PostgresClientKit
 public class Children<Child: TableObject>: Sequence {
   public typealias AsyncIterator = Children<Child>
   public typealias Element = Child
-  public let referencingColumn: Child.Key
+  public let referencingColumn: Child.Columns
   public var loadedValues: [Child]?
   let sortKey: ColumnName?
   let sortDir: SQLQuery<Child>.OrderBy
   
-  public init(ofType childType: Child.Type, by childCol: Child.Key, sortBy: ColumnName? = nil, order: SQLQuery<Child>.OrderBy = .ascending) {
+  public init(ofType childType: Child.Type, by childCol: Child.Columns, sortBy: ColumnName? = nil, order: SQLQuery<Child>.OrderBy = .ascending) {
     self.referencingColumn = childCol
     self.sortKey = sortBy
     self.sortDir = order

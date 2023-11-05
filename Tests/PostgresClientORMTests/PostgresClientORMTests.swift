@@ -1,4 +1,4 @@
-@testable import CodingKeysGeneratorMacros
+@testable import PostgresORMMacros
 @testable import PostgresClientORM
 import PostgresClientKit
 import SwiftSyntaxMacros
@@ -79,21 +79,18 @@ struct Entity {
   let count: Int
   let `protocol`: String
 
-    enum CodingKeys: String, CodingKey, CaseIterable {
+    enum Columns: String, CodingKey, CaseIterable {
         case planets
         case otherClass = "other_class"
-        case currentValue = "entity_value"
+        case currentValue = "current_value"
+        case foo
         case count
         case `protocol`
         case id = "entity_id"
     }
 
-    typealias Key = CodingKeys
-
-    static var tableName = "entities"
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
+    init(row: RowReader) throws {
+        let container = try row.container(keyedBy: CodingKeys.self)
         self.otherClass = try container.decode(Classic.self, forKey: .otherClass)
         self.accesssedVar = try container.decode(Int.self, forKey: .accesssedVar)
         self.currentValue = try container.decode(Int.self, forKey: .currentValue)
@@ -103,8 +100,8 @@ struct Entity {
         self._idHolder.value = try container.decode(String.self, forKey: .id)
     }
 
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
+    func encode(row: RowWriter) throws {
+        var container = row.container(keyedBy: CodingKeys.self)
         if !(encoder is SQLEncoder) {
             try container.encodeIfPresent(self.planets.loadedValues, forKey: .planets)
         }
@@ -116,6 +113,8 @@ struct Entity {
         try container.encode(self.protocol, forKey: .protocol)
         try container.encode(self.id, forKey: .id)
     }
+
+    static var tableName = "entities"
 
     static var idColumn: ColumnName {
         Self.column(.id)
@@ -137,19 +136,5 @@ struct Entity {
 """
       assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
-  
-  func testParentDecoding() throws {
-    let decoder = SQLDecoder(columnMap: ["parent": 0], values: [PostgresValue("13")])
-    let c = try decoder.decode(Child.self)
-    XCTAssert(c.parent.id == 13)
-  }
 }
 
-@TableObject(keys: .camelCase, table: "xxx", idType: Int.self, trackDirty: false)
-struct Papa {
-  var c1 = 1
-}
-
-struct Child: Decodable {
-  var parent: Parent<Papa>
-}

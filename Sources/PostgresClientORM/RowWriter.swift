@@ -8,39 +8,29 @@
 import Foundation
 import PostgresClientKit
 
-public class SQLEncoder: Encoder {
+public class RowWriter {
   public var codingPath: [CodingKey] = []
   public var userInfo: [CodingUserInfoKey: Any] = [:]
   fileprivate var variableNames = [String]()
   fileprivate var values = [String]()
   
-  enum QueryType {
+  public enum QueryType {
     case insert
     case partialUpdate
   }
 
   public func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key: CodingKey {
     KeyedEncodingContainer(
-      SQLKeyedEncodingContainer(codingPath: codingPath,
+      SQLKeyedEncodingContainer<Key>(type: type, codingPath: codingPath,
                                 appendValues: { [weak self] name, value in
                                   self?.variableNames.append(name)
                                   self?.values.append(value)
-                                }, parentEncoderGetter: { [unowned self] in
-                                  self
                                 })
     )
   }
   
-  public func unkeyedContainer() -> UnkeyedEncodingContainer {
-    fatalError("Unsupported")
-  }
-  
-  public func singleValueContainer() -> SingleValueEncodingContainer {
-    fatalError("Unsupported")
-  }
-  
-  func encode<T: TableObject>(_ value: T, as queryType: SQLEncoder.QueryType) throws -> SQLQuery<T> {
-    try value.encode(to: self)
+  public func encode<T: TableObject>(_ value: T, as queryType: RowWriter.QueryType) throws -> SQLQuery<T> {
+    try value.encode(row: self)
     switch queryType {
     case .insert:
       return SQLQuery(base: "INSERT INTO \(T.tableName) (\(variableNames.joined(separator: ","))) VALUES (\(values.joined(separator: ",")))")
@@ -57,9 +47,9 @@ public class SQLEncoder: Encoder {
 
 private struct SQLKeyedEncodingContainer<K: CodingKey>: KeyedEncodingContainerProtocol {
   typealias Key = K
+  var type: K.Type
   var codingPath: [CodingKey]
   var appendValues: (String, String) -> Void
-  var parentEncoderGetter: () -> Encoder
 
   mutating func encodeNil(forKey key: K) throws {
     appendValues(key.stringValue, "NULL")
@@ -122,9 +112,9 @@ private struct SQLKeyedEncodingContainer<K: CodingKey>: KeyedEncodingContainerPr
   }
       
   mutating func encode(_ value: some Encodable, forKey key: K) throws {
-    if  value is any FieldGroup {
-      let enc = SQLEncoder()
-      try value.encode(to: enc)
+    if let value = value as? any FieldCodable {
+      let enc = RowWriter()
+      try value.encode(row: enc)
       zip(enc.variableNames, enc.values).forEach {
         appendValues("\(key.stringValue)_\($0.0)", $0.1)
       }
@@ -148,10 +138,10 @@ private struct SQLKeyedEncodingContainer<K: CodingKey>: KeyedEncodingContainerPr
   }
   
   mutating func superEncoder() -> Encoder {
-    parentEncoderGetter()
+    fatalError("Unsupported")
   }
   
   mutating func superEncoder(forKey key: K) -> Encoder {
-    parentEncoderGetter()
+    fatalError("Unsupported")
   }
 }

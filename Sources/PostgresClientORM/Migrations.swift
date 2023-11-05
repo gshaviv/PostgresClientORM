@@ -8,6 +8,7 @@
 import Foundation
 import PostgresClientKit
 
+
 public class Migrations {
   private var steps: [(String, (UUID) async throws -> Void)] = []
   
@@ -39,7 +40,7 @@ public class Migrations {
   public init() {}
 }
 
-@TableObject(keys: .camelCase, table: "_Migrations", idType: String.self, trackDirty: false)
+@TableObject(columns: .camelCase, table: "_Migrations", idType: String.self, trackDirty: false)
 struct PerformedMigration: Hashable {
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {
     lhs.id == rhs.id
@@ -259,3 +260,4 @@ public func column(_ name: String, type: ColumnType = .unknwon) -> ColumnDefinit
 public func table(_ name: String, @ArrayBuilder<ColumnDefinitation> columns: () throws -> [ColumnDefinitation] = { [] }) rethrows -> TableDefinition {
   try TableDefinition(name: name, columns: columns())
 }
+

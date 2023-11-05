@@ -8,7 +8,7 @@
 import Foundation
 import PostgresClientKit
 
-public struct SQLQuery<TYPE: Codable> {
+public struct SQLQuery<TYPE: FieldCodable> {
   let base: String
   var filter: [String] = []
   var extras: [String] = []
@@ -63,7 +63,7 @@ public struct SQLQuery<TYPE: Codable> {
     }
   }
 
-  public var results: QueryResults<TYPE> {
+  public var results: QueryResults<TYPE>  {
     get async throws {
       try await QueryResults(query: self)
     }

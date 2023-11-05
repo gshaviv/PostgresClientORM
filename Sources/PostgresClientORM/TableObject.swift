@@ -8,7 +8,7 @@
 import Foundation
 import PostgresClientKit
 
-public protocol TableObject: Codable, FieldGroup {
+public protocol TableObject: FieldCodable {
   static var tableName: String { get }
   associatedtype IDType: PostgresValueConvertible & Codable
   var id: Self.IDType? { get nonmutating set }
@@ -55,7 +55,7 @@ public extension TableObject {
     if let optionalid = id as? UUID?, optionalid == nil {
       id = UUID() as? IDType
     }
-    let insertQuery = try SQLEncoder().encode(self, as: .insert)
+    let insertQuery = try RowWriter().encode(self, as: .insert)
     _ = try await insertQuery.transaction(transation).execute()
     dbHash = try calculcateDbHash()
   }
@@ -64,7 +64,7 @@ public extension TableObject {
     guard id != nil else {
       throw PostgresError.valueIsNil
     }
-    let updateQuery = try SQLEncoder().encode(self, as: .partialUpdate).where {
+    let updateQuery = try RowWriter().encode(self, as: .partialUpdate).where {
       Self.idColumn == id
     }
     _ = try await updateQuery.transaction(transaction).execute()
@@ -93,7 +93,7 @@ public extension TableObject {
   }
 
   func calculcateDbHash() throws -> Int {
-    let hashable = try SQLEncoder().encode(self, as: .partialUpdate)
+    let hashable = try RowWriter().encode(self, as: .partialUpdate)
     return hashable.sqlString.hashValue
   }
 }
