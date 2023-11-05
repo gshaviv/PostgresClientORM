@@ -77,18 +77,18 @@ public class Children<Child: TableObject>: Sequence, Codable {
 }
 
 public class Parent<DAD: TableObject>: Codable {
-  var parentID: DAD.IDType
-  var parent: DAD?
-  
+  public var id: DAD.IDType
+  public var value: DAD?
+    
   init(id: DAD.IDType) {
-    self.parentID = id
-    self.parent = nil
+    self.id = id
+    self.value = nil
   }
   
-  init(parent: DAD) throws {
-    self.parent = parent
-    if let id = parent.id {
-      self.parentID = id
+  init(value: DAD) throws {
+    self.value = value
+    if let id = value.id {
+      self.id = id
     } else {
       throw TableObjectError.general("parent Id == nil")
     }
@@ -96,20 +96,18 @@ public class Parent<DAD: TableObject>: Codable {
   
   public required init(from decoder: Decoder) throws {
     let container = try decoder.singleValueContainer()
-    self.parentID = try container.decode(DAD.IDType.self)
+    self.id = try container.decode(DAD.IDType.self)
   }
   
   public func encode(to encoder: Encoder) throws {
     var container = encoder.singleValueContainer()
-    try container.encode(parentID)
+    try container.encode(id)
   }
   
-  var value: DAD? { parent }
-  var id: DAD.IDType? { parentID }
-  var type: DAD.Type { DAD.self }
+  public var type: DAD.Type { DAD.self }
   
-  func get() async throws {
-    guard parent == nil else { return }
-    parent = try await DAD.fetch(id: parentID)
+  public func get() async throws {
+    guard value == nil else { return }
+    value = try await DAD.fetch(id: id)
   }
 }
