@@ -141,7 +141,6 @@ struct Entity {
       assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
   
-  
   @TableObject(columns: .snakeCase, table: "xxx", idType: Int64.self)
   struct Test {
     var variable: Int
