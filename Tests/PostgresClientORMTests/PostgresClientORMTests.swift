@@ -140,5 +140,18 @@ struct Entity {
 """
       assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
+  
+  
+  @TableObject(columns: .snakeCase, table: "xxx", idType: Int64.self, trackDirty: false)
+  struct Test {
+    var variable: Int
+  }
+
+  func testInt64() throws {
+    let sql = Test.select().where({
+      Test.idColumn == 23
+    }).sqlString
+    XCTAssertEqual(sql, "SELECT * FROM xxx WHERE id = 23")
+  }
 }
 

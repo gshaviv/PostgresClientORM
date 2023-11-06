@@ -12,7 +12,7 @@ public struct SQLQuery<TYPE: FieldCodable> {
   let base: String
   var filter: [String] = []
   var extras: [String] = []
-  var transaction: UUID? = nil
+  var transaction: UUID?
 
   public init(base: String, filter: [String] = [], extras: [String] = [], in transaction: UUID? = nil) {
     self.base = base
@@ -63,7 +63,7 @@ public struct SQLQuery<TYPE: FieldCodable> {
     }
   }
 
-  public var results: QueryResults<TYPE>  {
+  public var results: QueryResults<TYPE> {
     get async throws {
       try await QueryResults(query: self)
     }
@@ -73,22 +73,6 @@ public struct SQLQuery<TYPE: FieldCodable> {
 extension SQLQuery: ExpressibleByStringLiteral {
   public init(stringLiteral value: String) {
     base = value
-  }
-}
-
-extension PostgresValueConvertible {
-  var sqlString: String {
-    self is QuoteSQLValue ? "'\(postgresValue)'" : "\(postgresValue)"
-  }
-}
-
-protocol QuoteSQLValue {}
-
-extension String: QuoteSQLValue {}
-
-extension UUID: PostgresValueConvertible, QuoteSQLValue {
-  public var postgresValue: PostgresClientKit.PostgresValue {
-    PostgresValue(uuidString)
   }
 }
 
