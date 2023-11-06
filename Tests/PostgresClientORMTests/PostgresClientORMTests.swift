@@ -49,7 +49,7 @@ struct Entity {
   
   func testTablePersistMacros() {
       let source = """
-@TableObject(.snakeCase, table: "entities", idType: String.self, idName: "entity_id", trackDirty: true)
+@TableObject(.snakeCase, table: "entities", idType: String.self, idName: "entity_id")
 struct Entity {
   var planets = Children(of: self, ofType: Planet.self, parent: .star)
   var galaxy: Parent<Galaxy>
@@ -142,7 +142,7 @@ struct Entity {
   }
   
   
-  @TableObject(columns: .snakeCase, table: "xxx", idType: Int64.self, trackDirty: false)
+  @TableObject(columns: .snakeCase, table: "xxx", idType: Int64.self)
   struct Test {
     var variable: Int
   }

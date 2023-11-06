@@ -25,7 +25,7 @@ public extension TableObject {
     SQLQuery(base: "DELETE FROM \(tableName)")
   }
 
-  func delete() async throws  {
+  func delete() async throws {
     try await Self.delete().where {
       Self.idColumn == id
     }
@@ -34,11 +34,6 @@ public extension TableObject {
 
   static func count() -> SQLQuery<CountRetrieval> {
     SQLQuery(base: "SELECT count(*) FROM \(tableName)")
-  }
-
-  var dbHash: Int? {
-    get { -1 }
-    nonmutating set {}
   }
 
   static func fetch(id: IDType?, transaction: UUID? = nil) async throws -> Self? {
@@ -73,16 +68,10 @@ public extension TableObject {
   }
 
   func isDirty() throws -> Bool {
-    guard dbHash != -1 else {
-      throw TableObjectError.unsupported
-    }
-    return try dbHash != calculcateDbHash()
+    try dbHash != calculcateDbHash()
   }
 
   func save(transaction: UUID? = nil) async throws {
-    guard dbHash != -1 else {
-      throw TableObjectError.unsupported
-    }
     if id == nil || dbHash == nil {
       try await insert(transation: transaction)
     } else {

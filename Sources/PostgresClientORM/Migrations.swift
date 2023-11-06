@@ -40,7 +40,7 @@ public class Migrations {
   public init() {}
 }
 
-@TableObject(columns: .camelCase, table: "_Migrations", idType: String.self, trackDirty: false)
+@TableObject(columns: .camelCase, table: "_Migrations", idType: String.self)
 struct PerformedMigration: Hashable {
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {
     lhs.id == rhs.id

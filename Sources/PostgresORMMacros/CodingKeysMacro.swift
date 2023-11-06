@@ -7,12 +7,11 @@ import SwiftSyntaxMacros
 public struct TablePersistMacro: MemberMacro {
   public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
     guard case let .argumentList(arguments) = node.arguments,
-          arguments.count > 3,
-          let generateDbHash = arguments.last?.expression.description,
+          arguments.count > 2,
           let idType = arguments[arguments.index(arguments.startIndex, offsetBy: 2)].expression.description.components(separatedBy: ".").first
     else {
       context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "Need three arguments: key case type, table name, idType, track dirty", diagnosticID: .arguments, severity: .error)))
+                             message: GeneratorDiagnostic(message: "Need at least three arguments: key case type, table name, [id name], idType", diagnosticID: .arguments, severity: .error)))
       return []
     }
     let tableName = arguments[arguments.index(after: arguments.startIndex)].expression
@@ -42,13 +41,9 @@ public struct TablePersistMacro: MemberMacro {
       return []
     }
 
-
-
     return codingKeys + ["static var tableName = \(tableName)",
-                         DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }")] +
-      (generateDbHash == "true" ? [
-        "@DBHash var dbHash: Int?"
-      ] : []) +
+                         DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }"),
+                         "@DBHash var dbHash: Int?"] +
       (isStruct ? [
         "private let _idHolder = IDHolder<\(raw: idType)>()",
         """

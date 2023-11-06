@@ -9,7 +9,7 @@ public macro Columns(_ type: KeyType) = #externalMacro(module: "PostgresORMMacro
 
 @attached(member, names: named(idColumn), named(id), named(Columns), named(_idHolder), named(dbHash), named(init(row:)), named(encode(row:)), named(tableName))
 @attached(extension, conformances: TableObject)
-public macro TableObject(columns: KeyType, table: String, idType: Any.Type, idName: String = "id", trackDirty: Bool) = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
+public macro TableObject(columns: KeyType, table: String, idType: Any.Type, idName: String = "id") = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
 
 @attached(peer)
 public macro Column(name: String) = #externalMacro(

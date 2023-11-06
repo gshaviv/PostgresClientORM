@@ -17,6 +17,7 @@ public struct CountRetrieval: TableObject {
   }
 
   let _idHolder = IDHolder<Int>()
+  @DBHash public var dbHash: Int?
   public var id: Int? {
     get { _idHolder.value }
     nonmutating set { _idHolder.value = newValue }
