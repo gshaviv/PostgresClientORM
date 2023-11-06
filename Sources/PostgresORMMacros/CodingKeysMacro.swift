@@ -1,4 +1,5 @@
 import Foundation
+import RegexBuilder
 import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
@@ -109,6 +110,8 @@ public struct CodingKeysMacro: MemberMacro {
       return []
     }
 
+   
+
     let isStruct: Bool
     switch declaration.kind {
     case .classDecl:
@@ -118,8 +121,17 @@ public struct CodingKeysMacro: MemberMacro {
                                message: GeneratorDiagnostic(message: "@TableObject classes must be declared final", diagnosticID: .arguments, severity: .error)))
         return []
       }
+      if customId == nil && declaration.as(ClassDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
+        context.diagnose(.init(node: node,
+                               message: GeneratorDiagnostic(message: "@Column can only be applied to Codable types", diagnosticID: .arguments, severity: .warning)))
+      }
+      
     case .structDecl:
       isStruct = true
+      if customId == nil && declaration.as(StructDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
+        context.diagnose(.init(node: node,
+                               message: GeneratorDiagnostic(message: "@Column can only be applied to Codable types", diagnosticID: .arguments, severity: .warning)))
+      }
     default:
       context.diagnose(.init(node: node,
                              message: GeneratorDiagnostic(message: "@TableObject can be attached only to final class or struct", diagnosticID: .arguments, severity: .error)))

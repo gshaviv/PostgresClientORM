@@ -6,22 +6,19 @@ import SwiftSyntaxMacrosTestSupport
 import XCTest
 
 let testMacros: [String: Macro.Type] = [
-    "CodingKeys": CodingKeysMacro.self,
-    "CodingKey": CustomCodingKeyMacro.self,
-    "CodingKeyIgnored": CodingKeyIgnoredMacro.self,
+    "Columns": CodingKeysMacro.self,
+    "Column": CustomCodingKeyMacro.self,
+    "ColoumnIgnored": CodingKeyIgnoredMacro.self,
     "TableObject": TablePersistMacro.self,
     "ID": IDMacro.self
 ]
 
 final class CodingKeysGeneratorTests: XCTestCase {
-    func testCodingKeysMacros() {
+    func testColumnsMacros() {
         let source = """
-@CodingKeys
-struct Entity {
-    @CodingKey(custom: "entity_id")
-    let id: String
+@Columns(.snakeCase)
+final class Entity: Codable {
     let currentValue: Int
-    @CodingKeyIgnored
     let foo: Bool
     let count: Int
     let `protocol`: String
@@ -46,6 +43,39 @@ struct Entity {
 """
         assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
     }
+  
+  func testCodingKeysMacros() {
+      let source = """
+@CodingKeys
+struct Entity {
+  @CodingKey(custom: "entity_id")
+  let id: String
+  let currentValue: Int
+  @CodingKeyIgnored
+  let foo: Bool
+  let count: Int
+  let `protocol`: String
+}
+"""
+      let expected = """
+
+struct Entity {
+  let id: String
+  let currentValue: Int
+  let foo: Bool
+  let count: Int
+  let `protocol`: String
+
+  enum CodingKeys: String, CodingKey {
+      case id = "entity_id"
+      case currentValue = "current_value"
+      case count
+      case `protocol`
+  }
+}
+"""
+      assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
+  }
   
   func testTablePersistMacros() {
       let source = """
