@@ -350,11 +350,11 @@ public struct CodingKeysMacro: MemberMacro {
     let encodeRegex = Regex {
       "func"
       OneOrMore(.whitespace)
-      "encode(to:"
+      "encode(to "
     }
 
     let initRegex = Regex {
-      "init(from:"
+      "init(from "
     }
 
     let membersText = declaration.memberBlock.members.map(\.trimmed.description)
