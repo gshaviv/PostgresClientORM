@@ -179,10 +179,6 @@ public struct CodingKeysMacro: MemberMacro {
 
     case .structDecl:
       isStruct = true
-      if customId == nil, declaration.as(StructDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
-        context.diagnose(.init(node: node,
-                               message: GeneratorDiagnostic(message: "@Column can only be applied to Codable types", diagnosticID: .arguments, severity: .warning)))
-      }
     default:
       context.diagnose(.init(node: node,
                              message: GeneratorDiagnostic(message: "@TableObject can be attached only to final class or struct", diagnosticID: .arguments, severity: .error)))
