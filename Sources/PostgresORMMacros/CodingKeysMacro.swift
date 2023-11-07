@@ -84,7 +84,7 @@ public struct TablePersistMacro: MemberMacro {
         get {
            _dbHash.value
         }
-        nonmutating set {
+        \(raw: isStruct ? "nonmutating" : "") set {
            _dbHash.value = newValue
         }
       }
