@@ -46,7 +46,7 @@ struct Entity {
   
   func testTablePersistMacros() {
       let source = """
-@TableObject(columns: .snakeCase, table: "entities", idType: String.self, idName: "entity_id")
+@TableObject(columns: .snakeCase, table: "entities", idType: String.self, idName: "entity_id", codable: .camelCase)
 struct Entity {
   var planets = Children(of: self, ofType: Planet.self, parent: .star)
   var galaxy: Parent<Galaxy>
@@ -107,6 +107,40 @@ struct Entity {
         try container.encode(self.galaxy, forKey: .galaxy)
         try container.encode(self.otherClass, forKey: .otherClass)
         try container.encode(self.currentValue, forKey: .currentValue)
+        try container.encode(self.count, forKey: .count)
+        try container.encode(self.protocol, forKey: .protocol)
+        try container.encode(self.id, forKey: .id)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case planets
+        case galaxy
+        case otherClass
+        case currentValue
+        case foo
+        case count
+        case `protocol`
+        case id = "entity_id"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: Columns.self)
+        self.galaxy = try container.decode(Parent<Galaxy>.self, forKey: .galaxy)
+        self.otherClass = try container.decode(Classic.self, forKey: .otherClass)
+        self.currentValue = try container.decode(Int.self, forKey: .currentValue)
+        self.foo = try container.decode(Bool.self, forKey: .foo)
+        self.count = try container.decode(Int.self, forKey: .count)
+        self.protocol = try container.decode(String.self, forKey: .protocol)
+        self._idHolder.value = try container.decode(String.self, forKey: .id)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: Columns.self)
+        try container.encodeIfPresent(self.planets.loadedValues, forKey: .planets)
+        try container.encode(self.galaxy, forKey: .galaxy)
+        try container.encode(self.otherClass, forKey: .otherClass)
+        try container.encode(self.currentValue, forKey: .currentValue)
+        try container.encode(self.foo, forKey: .foo)
         try container.encode(self.count, forKey: .count)
         try container.encode(self.protocol, forKey: .protocol)
         try container.encode(self.id, forKey: .id)
