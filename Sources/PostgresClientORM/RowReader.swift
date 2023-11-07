@@ -26,8 +26,8 @@ public struct RowReader {
     self.values = values
   }
   
-  public func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
-    KeyedDecodingContainer(KeyedRowDecodingContainer<Key>(codingPath: codingPath, allKeys: [], values: values, columnMap: columnMap))
+  public func container<Key>(keyedBy type: Key.Type) throws -> KeyedRowDecodingContainer<Key> where Key: CodingKey {
+    KeyedRowDecodingContainer<Key>(codingPath: codingPath, allKeys: [], values: values, columnMap: columnMap)
   }
   
   public func decode<T: FieldSubset>(_ type: T.Type) throws -> T {
@@ -35,8 +35,7 @@ public struct RowReader {
   }
 }
 
-public struct KeyedRowDecodingContainer<K: CodingKey>: KeyedDecodingContainerProtocol {
-  public typealias Key = K
+public struct KeyedRowDecodingContainer<Key: CodingKey> {
   public var codingPath: [CodingKey]
   public var allKeys: [Key]
   let values: [PostgresValue]
@@ -151,31 +150,28 @@ public struct KeyedRowDecodingContainer<K: CodingKey>: KeyedDecodingContainerPro
     return v
   }
   
+  public func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: FieldSubset {
+    let mapSubset = columnMap.reduce(into: [String: Int]()) {
+      if $1.key.hasPrefix("\(key.stringValue)_") {
+        let tail = String($1.key[$1.key.index($1.key.startIndex, offsetBy: key.stringValue.count + 1)...])
+        $0[tail] = $1.value
+      }
+    }
+    let dec = RowReader(columnMap: mapSubset, values: values)
+    return try dec.decode(type)
+  }
+  
   public func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: Decodable {
-    if let type = type as? any FieldSubset.Type {
-      let mapSubset = columnMap.reduce(into: [String: Int]()) {
-        if $1.key.hasPrefix("\(key.stringValue)_") {
-          let tail = String($1.key[$1.key.index($1.key.startIndex, offsetBy: key.stringValue.count + 1)...])
-          $0[tail] = $1.value
-        }
-      }
-      let dec = RowReader(columnMap: mapSubset, values: values)
-      guard let v = try dec.decode(type) as? T else {
-        fatalError("strange?")
-      }
-      return v
-    } else {
-      guard let data = try decode(String.self, forKey: key).data(using: .utf8) else {
-        throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath + [key], debugDescription: key.stringValue))
-      }
-      guard let str = String(data: data, encoding: .utf8) else {
-        throw TableObjectError.general("Invalied data for key: \(key.stringValue)")
-      }
-      if !str.hasPrefix("{") || !str.hasPrefix("["), Double(str) == nil, let data = "\"\(str)\"".data(using: .utf8) {
-        return try JSONDecoder().decode(type, from: data)
-      }
+    guard let data = try decode(String.self, forKey: key).data(using: .utf8) else {
+      throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath + [key], debugDescription: key.stringValue))
+    }
+    guard let str = String(data: data, encoding: .utf8) else {
+      throw TableObjectError.general("Invalied data for key: \(key.stringValue)")
+    }
+    if !str.hasPrefix("{") || !str.hasPrefix("["), Double(str) == nil, let data = "\"\(str)\"".data(using: .utf8) {
       return try JSONDecoder().decode(type, from: data)
     }
+    return try JSONDecoder().decode(type, from: data)
   }
   
   public func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
