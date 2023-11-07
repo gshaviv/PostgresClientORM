@@ -142,7 +142,7 @@ extension CodingKeysMacro: ExtensionMacro {
     guard !protocols.isEmpty else {
       return []
     }
-    return try [ExtensionDeclSyntax("extension \(type.trimmed): FieldCodable") {}]
+    return try [ExtensionDeclSyntax("extension \(type.trimmed): FieldSubset") {}]
   }
 }
 
