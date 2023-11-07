@@ -152,9 +152,9 @@ public struct CodingKeysMacro: MemberMacro {
                                in context: some MacroExpansionContext) throws -> [DeclSyntax]
   {
     let args = extractArgs(from: node)
-    guard let keyType = args.parse("columns", using: { CodingKeyType(rawValue: $0.description) }) else {
+    guard let keyType = args.parse("", using: { CodingKeyType(rawValue: $0.description) }) else {
       context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "Missing column type argument", diagnosticID: .arguments, severity: .error)))
+                             message: GeneratorDiagnostic(message: "Missing column type (first unlabled) argument", diagnosticID: .arguments, severity: .error)))
       return []
     }
     let codingKeyType = args.parse("codable", using: { CodingKeyType(rawValue: $0.description) }) ?? .none
