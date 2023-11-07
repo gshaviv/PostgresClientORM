@@ -14,7 +14,7 @@ public enum CodingKeyType {
 public macro Columns(_ type: KeyType = .snakeCase) = #externalMacro(module: "PostgresORMMacros", type: "CodingKeysMacro")
 
 @attached(member, names: named(CodingKeys), named(init(from:)), named(encode(to:)), named(idColumn), named(id), named(Columns), named(_idHolder), named(dbHash), named(_dbHash), named(init(row:)), named(encode(row:)), named(tableName))
-@attached(extension, conformances: TableObject, Codable, SaveableTableObject)
+@attached(extension, conformances: TableObject, Codable, DirtyTrackedTableObject)
 public macro TableObject(columns: KeyType = .snakeCase, table: String, idType: Any.Type, idName: String = "id", trackDirty: Bool = true, codable: CodingKeyType = .none) = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
 
 @attached(peer)
