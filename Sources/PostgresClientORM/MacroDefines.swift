@@ -3,13 +3,19 @@ public enum KeyType {
   case snakeCase
 }
 
+public enum CodingKeyType {
+  case camelCase
+  case snakeCase
+  case none
+}
+
 @attached(member, names: named(Columns), named(init(row:)), named(encode(row:)))
 @attached(extension, conformances: FieldCodable)
-public macro Columns(_ type: KeyType) = #externalMacro(module: "PostgresORMMacros", type: "CodingKeysMacro")
+public macro Columns(_ type: KeyType = .snakeCase) = #externalMacro(module: "PostgresORMMacros", type: "CodingKeysMacro")
 
 @attached(member, names: named(idColumn), named(id), named(Columns), named(_idHolder), named(dbHash), named(init(row:)), named(encode(row:)), named(tableName))
 @attached(extension, conformances: TableObject)
-public macro TableObject(columns: KeyType, table: String, idType: Any.Type, idName: String = "id") = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
+public macro TableObject(columns: KeyType = .snakeCase, table: String, idType: Any.Type, idName: String = "id") = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
 
 @attached(peer)
 public macro Column(name: String) = #externalMacro(

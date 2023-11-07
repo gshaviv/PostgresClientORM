@@ -5,25 +5,50 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
+public enum CodingKeyType: String {
+  case camelCase = ".camelCase"
+  case snakeCase = ".snakeCase"
+  case none = ".none"
+}
+
+private func extractArgs(from node: AttributeSyntax) -> [String: ExprSyntax] {
+  guard case let .argumentList(arguments) = node.arguments else {
+    return [:]
+  }
+  return arguments.reduce(into: [String: ExprSyntax]()) {
+    $0[$1.label?.trimmed.description ?? ""] = $1.expression.trimmed
+  }
+}
+
+extension [String: ExprSyntax] {
+  func parse<T>(_ key: String, using block: (ExprSyntax) -> T?) -> T? {
+    if let value = self[key] {
+      return block(value)
+    } else {
+      return nil
+    }
+  }
+}
+
 public struct TablePersistMacro: MemberMacro {
   public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-    guard case let .argumentList(arguments) = node.arguments,
-          arguments.count > 2,
-          let idType = arguments[arguments.index(arguments.startIndex, offsetBy: 2)].expression.description.components(separatedBy: ".").first
-    else {
+    let args = extractArgs(from: node)
+    guard let keyType = args.parse("columns", using: { CodingKeyType(rawValue: $0.description) }) else {
       context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "Need at least three arguments: key case type, table name, [id name], idType", diagnosticID: .arguments, severity: .error)))
+                             message: GeneratorDiagnostic(message: "Missing column type argument", diagnosticID: .arguments, severity: .error)))
       return []
     }
-    let tableName = arguments[arguments.index(after: arguments.startIndex)].expression
-    let idName: TokenSyntax
-    if arguments.count == 5 {
-      idName = TokenSyntax(stringLiteral: arguments[arguments.index(arguments.startIndex, offsetBy: 3)].expression.description.trimmingCharacters(in: CharacterSet(charactersIn: "\" ")))
-    } else {
-      idName = TokenSyntax(stringLiteral: "id")
+    guard let tableName = args.parse("table", using: { $0 }) else {
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "Missing table name argument", diagnosticID: .arguments, severity: .error)))
+      return []
     }
-
-    let codingKeys = try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration, customId: idName.description, idType: idType, in: context)
+    let idName = TokenSyntax(stringLiteral: args.parse("idName", using: { $0.description.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }) ?? "id")
+    guard let idType = args.parse("idType", using: { $0.description.components(separatedBy: ".").first }) else {
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "missing idType", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
 
     let isStruct: Bool
     switch declaration.kind {
@@ -42,9 +67,13 @@ public struct TablePersistMacro: MemberMacro {
       return []
     }
 
-    return codingKeys + ["static var tableName = \(tableName)",
-                         DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }"),
-                         "@DBHash var dbHash: Int?"] +
+    return try CodingKeysMacro.expansion(of: node, providingMembersOf: declaration,
+                                         keyType: keyType,
+                                         customId: idName.description,
+                                         idType: idType, in: context) +
+      ["static var tableName = \(tableName)",
+       DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }"),
+       "@DBHash var dbHash: Int?"] +
       (isStruct ? [
         "private let _idHolder = IDHolder<\(raw: idType)>()",
         """
@@ -94,24 +123,20 @@ public struct CodingKeysMacro: MemberMacro {
                                providingMembersOf declaration: some DeclGroupSyntax,
                                in context: some MacroExpansionContext) throws -> [DeclSyntax]
   {
-    try self.expansion(of: node, providingMembersOf: declaration, customId: nil, idType: "", in: context)
+    let args = extractArgs(from: node)
+    guard let keyType = args.parse("columns", using: { CodingKeyType(rawValue: $0.description) }) else {
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "Missing column type argument", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
+    return try self.expansion(of: node, providingMembersOf: declaration, keyType: keyType, customId: nil, idType: "", in: context)
   }
 
-  public static func expansion(of node: AttributeSyntax,
-                               providingMembersOf declaration: some DeclGroupSyntax,
+  public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax,
+                               keyType: CodingKeyType,
                                customId: String?, idType: String,
                                in context: some MacroExpansionContext) throws -> [DeclSyntax]
   {
-    guard case let .argumentList(arguments) = node.arguments,
-          let keyType = arguments.first?.expression.description
-    else {
-      context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "Missing arguments: key case type, track dirty", diagnosticID: .arguments, severity: .error)))
-      return []
-    }
-
-   
-
     let isStruct: Bool
     switch declaration.kind {
     case .classDecl:
@@ -121,14 +146,14 @@ public struct CodingKeysMacro: MemberMacro {
                                message: GeneratorDiagnostic(message: "@TableObject classes must be declared final", diagnosticID: .arguments, severity: .error)))
         return []
       }
-      if customId == nil && declaration.as(ClassDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
+      if customId == nil, declaration.as(ClassDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
         context.diagnose(.init(node: node,
                                message: GeneratorDiagnostic(message: "@Column can only be applied to Codable types", diagnosticID: .arguments, severity: .warning)))
       }
-      
+
     case .structDecl:
       isStruct = true
-      if customId == nil && declaration.as(StructDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
+      if customId == nil, declaration.as(StructDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
         context.diagnose(.init(node: node,
                                message: GeneratorDiagnostic(message: "@Column can only be applied to Codable types", diagnosticID: .arguments, severity: .warning)))
       }
@@ -264,7 +289,7 @@ public struct CodingKeysMacro: MemberMacro {
         let raw = property.dropBackticks()
         let keyValue: String
         switch keyType {
-        case ".snakeCase": keyValue = raw.snakeCased()
+        case .snakeCase: keyValue = raw.snakeCased()
         default: keyValue = raw
         }
         return raw == keyValue ? "case \(property)" : "case \(property) = \"\(keyValue)\""
