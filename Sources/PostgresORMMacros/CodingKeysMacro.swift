@@ -176,10 +176,6 @@ public struct CodingKeysMacro: MemberMacro {
                                message: GeneratorDiagnostic(message: "@TableObject classes must be declared final", diagnosticID: .arguments, severity: .error)))
         return []
       }
-      if customId == nil, declaration.as(ClassDeclSyntax.self)?.inheritanceClause?.inheritedTypes.contains(where: { $0.trimmed.description == "Codable" }) == false {
-        context.diagnose(.init(node: node,
-                               message: GeneratorDiagnostic(message: "@Column can only be applied to Codable types", diagnosticID: .arguments, severity: .warning)))
-      }
 
     case .structDecl:
       isStruct = true
