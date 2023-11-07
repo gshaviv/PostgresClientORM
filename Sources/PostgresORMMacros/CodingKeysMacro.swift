@@ -50,6 +50,7 @@ public struct TablePersistMacro: MemberMacro {
       return []
     }
     let codingKeyType = args.parse("codable", using: { CodingKeyType(rawValue: $0.description) }) ?? .none
+    let trackDirty = args.parse("trackDirty", using: { Bool($0.description) }) ?? true
 
     let isStruct: Bool
     switch declaration.kind {
@@ -75,18 +76,30 @@ public struct TablePersistMacro: MemberMacro {
                                          codableType: codingKeyType,
                                          in: context) +
       ["static var tableName = \(tableName)",
-       DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }"),
-       "@DBHash var dbHash: Int?"] +
-      (isStruct ? [
-        "private let _idHolder = IDHolder<\(raw: idType)>()",
-        """
-        var id: \(raw: idType)? {
+       DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }")] +
+    (trackDirty ? [
+      "private let _dbHash = OptionalContainer<Int>()",
+      """
+      var dbHash: Int? {
         get {
-           _idHolder.value
+           _dbHash.value
         }
         nonmutating set {
-           _idHolder.value = newValue
+           _dbHash.value = newValue
         }
+      }
+      """
+    ] : []) +
+      (isStruct ? [
+        "private let _idHolder = OptionalContainer<\(raw: idType)>()",
+        """
+        var id: \(raw: idType)? {
+          get {
+             _idHolder.value
+          }
+          nonmutating set {
+             _idHolder.value = newValue
+          }
         }
         """
       ] : [
@@ -106,8 +119,17 @@ extension TablePersistMacro: ExtensionMacro {
     }
     let args = extractArgs(from: node)
     let codingKeyType = args.parse("codable", using: { CodingKeyType(rawValue: $0.description) }) ?? .none
+    let trackDirty = args.parse("trackDirty", using: { Bool($0.description) }) ?? true
+    
+    var conformingTo = ["TableObject"]
+    if trackDirty {
+      conformingTo.append("SaveableTableObject")
+    }
+    if codingKeyType != .none {
+      conformingTo.append("Codable")
+    }
 
-    return try [ExtensionDeclSyntax("extension \(type.trimmed): TableObject\(raw: codingKeyType != .none ? ", Codable" : "")") {}]
+    return try [ExtensionDeclSyntax("extension \(type.trimmed): \(raw: conformingTo.joined(separator: ", "))") {}]
   }
 }
 

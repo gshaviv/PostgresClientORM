@@ -7,13 +7,13 @@
 
 import Foundation
 
-public protocol FieldCodable {
+public protocol FieldSubset {
   associatedtype Columns: CodingKey
   init(row: RowReader) throws
   func encode(row: RowWriter) throws
 }
 
-public extension FieldCodable {
+public extension FieldSubset {
   static func column(_ key: Columns) -> ColumnName {
     ColumnName(key.stringValue)
   }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class IDHolder<Type: Codable> {
+public class OptionalContainer<Type: Codable> {
   public var value: Type?
 
   public init() {}

@@ -8,7 +8,7 @@
 import Foundation
 import PostgresClientKit
 
-public struct QueryResults<Type: FieldCodable>: Sequence, IteratorProtocol {
+public struct QueryResults<Type: FieldSubset>: Sequence, IteratorProtocol {
   private let connection: Connection
   private let statement: Statement
   private let cursor: Cursor

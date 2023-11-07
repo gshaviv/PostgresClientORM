@@ -112,7 +112,7 @@ private struct SQLKeyedEncodingContainer<K: CodingKey>: KeyedEncodingContainerPr
   }
       
   mutating func encode(_ value: some Encodable, forKey key: K) throws {
-    if let value = value as? any FieldCodable {
+    if let value = value as? any FieldSubset {
       let enc = RowWriter()
       try value.encode(row: enc)
       zip(enc.variableNames, enc.values).forEach {

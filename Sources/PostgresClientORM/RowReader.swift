@@ -30,7 +30,7 @@ public struct RowReader {
     KeyedDecodingContainer(KeyedRowDecodingContainer<Key>(codingPath: codingPath, allKeys: [], values: values, columnMap: columnMap))
   }
   
-  public func decode<T: FieldCodable>(_ type: T.Type) throws -> T {
+  public func decode<T: FieldSubset>(_ type: T.Type) throws -> T {
     try T(row: self)
   }
 }
@@ -152,7 +152,7 @@ public struct KeyedRowDecodingContainer<K: CodingKey>: KeyedDecodingContainerPro
   }
   
   public func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: Decodable {
-    if let type = type as? any FieldCodable.Type {
+    if let type = type as? any FieldSubset.Type {
       let mapSubset = columnMap.reduce(into: [String: Int]()) {
         if $1.key.hasPrefix("\(key.stringValue)_") {
           let tail = String($1.key[$1.key.index($1.key.startIndex, offsetBy: key.stringValue.count + 1)...])

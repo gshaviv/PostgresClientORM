@@ -8,7 +8,7 @@
 import Foundation
 import PostgresClientKit
 
-public struct SQLQuery<TYPE: FieldCodable> {
+public struct SQLQuery<TYPE: FieldSubset> {
   let base: String
   var filter: [String] = []
   var extras: [String] = []

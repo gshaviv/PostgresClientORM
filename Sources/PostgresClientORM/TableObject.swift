@@ -8,11 +8,10 @@
 import Foundation
 import PostgresClientKit
 
-public protocol TableObject: FieldCodable {
+public protocol TableObject: FieldSubset {
   static var tableName: String { get }
   associatedtype IDType: PostgresValueConvertible & Codable
   var id: Self.IDType? { get nonmutating set }
-  var dbHash: Int? { get nonmutating set }
   static var idColumn: ColumnName { get }
 }
 
@@ -67,19 +66,9 @@ public extension TableObject {
     dbHash = try calculcateDbHash()
   }
 
-  func isDirty() throws -> Bool {
-    try dbHash != calculcateDbHash()
-  }
-
-  func save(transaction: UUID? = nil) async throws {
-    if id == nil || dbHash == nil {
-      try await insert(transation: transaction)
-    } else {
-      guard try isDirty() else {
-        return
-      }
-      try await update(transaction: transaction)
-    }
+  var dbHash: Int? {
+    get { nil }
+    nonmutating set {}
   }
 
   func calculcateDbHash() throws -> Int {
@@ -91,4 +80,25 @@ public extension TableObject {
 public enum TableObjectError: Error {
   case general(String)
   case unsupported
+}
+
+public protocol SaveableTableObject {
+  var dbHash: Int? { get nonmutating set }
+}
+
+public extension SaveableTableObject where Self: TableObject {
+  func save(transaction: UUID? = nil) async throws {
+    if id == nil || dbHash == nil {
+      try await insert(transation: transaction)
+    } else {
+      guard try isDirty() else {
+        return
+      }
+      try await update(transaction: transaction)
+    }
+  }
+
+  func isDirty() throws -> Bool {
+    try dbHash != calculcateDbHash()
+  }
 }

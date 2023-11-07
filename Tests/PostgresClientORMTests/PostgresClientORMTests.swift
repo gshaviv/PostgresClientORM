@@ -152,17 +152,26 @@ struct Entity {
         Self.column(.id)
     }
 
-    @DBHash var dbHash: Int?
+    private let _dbHash = OptionalContainer<Int>()
 
-    private let _idHolder = IDHolder<String>()
+    var dbHash: Int? {
+      get {
+         _dbHash.value
+      }
+      nonmutating set {
+         _dbHash.value = newValue
+      }
+    }
+
+    private let _idHolder = OptionalContainer<String>()
 
     var id: String? {
-        get {
-           _idHolder.value
-        }
-        nonmutating set {
-           _idHolder.value = newValue
-        }
+      get {
+         _idHolder.value
+      }
+      nonmutating set {
+         _idHolder.value = newValue
+      }
     }
 }
 """

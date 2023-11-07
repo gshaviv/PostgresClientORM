@@ -16,7 +16,7 @@ public struct CountRetrieval: TableObject {
     case count
   }
 
-  let _idHolder = IDHolder<Int>()
+  let _idHolder = OptionalContainer<Int>()
   @DBHash public var dbHash: Int?
   public var id: Int? {
     get { _idHolder.value }

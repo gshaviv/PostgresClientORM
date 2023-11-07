@@ -30,7 +30,7 @@ public actor DatabaseActor {
     return try row.get().columns[0].int()
   }
 
-  public func execute<TYPE: FieldCodable>(sqlQuery: SQLQuery<TYPE>) async throws -> [TYPE] {
+  public func execute<TYPE: FieldSubset>(sqlQuery: SQLQuery<TYPE>) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != sqlQuery.transaction {
       try await activeTransaction.task.value
     }
@@ -48,7 +48,7 @@ public actor DatabaseActor {
     return items
   }
   
-  public func execute<TYPE: FieldCodable>(decode: TYPE.Type, _ sqlText: String, transaction id: UUID? = nil) async throws -> [TYPE] {
+  public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transaction id: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != id {
       try await activeTransaction.task.value
     }
