@@ -77,19 +77,28 @@ public struct TablePersistMacro: MemberMacro {
                                          in: context) +
       ["static var tableName = \(tableName)",
        DeclSyntax(stringLiteral: "static var idColumn: ColumnName { Self.column(.id) }")] +
-    (trackDirty ? [
-      "private let _dbHash = OptionalContainer<Int>()",
-      """
-      var dbHash: Int? {
-        get {
-           _dbHash.value
-        }
-        \(raw: isStruct ? "nonmutating" : "") set {
-           _dbHash.value = newValue
-        }
+    {
+      switch (trackDirty, isStruct) {
+      case (false, _):
+        return []
+      case (true, false):
+        return ["private var dbHash: Int?"]
+      case (true, true):
+        return [
+          "private let _dbHash = OptionalContainer<Int>()",
+          """
+          var dbHash: Int? {
+            get {
+               _dbHash.value
+            }
+           nonmutating set {
+               _dbHash.value = newValue
+            }
+          }
+          """
+        ]
       }
-      """
-    ] : []) +
+    }() +
       (isStruct ? [
         "private let _idHolder = OptionalContainer<\(raw: idType)>()",
         """
