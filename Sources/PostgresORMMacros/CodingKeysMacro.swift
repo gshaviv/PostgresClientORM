@@ -33,11 +33,7 @@ extension [String: ExprSyntax] {
 public struct TablePersistMacro: MemberMacro {
   public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
     let args = extractArgs(from: node)
-    guard let keyType = args.parse("columns", using: { CodingKeyType(rawValue: $0.description) }) else {
-      context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "Missing column type argument", diagnosticID: .arguments, severity: .error)))
-      return []
-    }
+    let keyType = args.parse("columns", using: { CodingKeyType(rawValue: $0.description) }) ?? .snakeCase
     guard let tableName = args.parse("table", using: { $0 }) else {
       context.diagnose(.init(node: node,
                              message: GeneratorDiagnostic(message: "Missing table name argument", diagnosticID: .arguments, severity: .error)))
