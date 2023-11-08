@@ -48,6 +48,7 @@ struct PerformedMigration: Hashable {
     
   func hash(into hasher: inout Hasher) {
     hasher.combine(id)
+    _ = Self.column(.id)
   }
   
   init() {}
