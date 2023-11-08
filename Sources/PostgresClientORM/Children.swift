@@ -12,7 +12,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
   public typealias AsyncIterator = Children<Child>
   public typealias Element = Child
   public let referencingColumn: Child.Columns
-  public var loadedValues: [Child]?
+  public private(set) var loadedValues: [Child]?
   let sortKey: ColumnName?
   let sortDir: SQLQuery<Child>.OrderBy
   
@@ -77,8 +77,8 @@ public class Children<Child: TableObject>: Sequence, Codable {
 }
 
 public class Parent<DAD: TableObject>: Codable {
-  public var id: DAD.IDType
-  public var value: DAD?
+  public private(set) var id: DAD.IDType
+  public private(set) var value: DAD?
     
   public init(_ id: DAD.IDType) {
     self.id = id
@@ -108,6 +108,38 @@ public class Parent<DAD: TableObject>: Codable {
   
   public func get() async throws {
     guard value == nil else { return }
+    value = try await DAD.fetch(id: id)
+  }
+}
+
+public class OptionalParent<DAD: TableObject>: Codable {
+  public private(set) var id: DAD.IDType?
+  public private(set) var value: DAD?
+    
+  public init(_ id: DAD.IDType?) {
+    self.id = id
+    self.value = nil
+  }
+  
+  public init(_ value: DAD?) throws {
+    self.value = value
+    self.id = value?.id
+  }
+  
+  public required init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    self.id = try container.decode(DAD.IDType.self)
+  }
+  
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.singleValueContainer()
+    try container.encode(id)
+  }
+  
+  public var type: DAD.Type { DAD.self }
+  
+  public func get() async throws {
+    guard id != nil, value == nil else { return }
     value = try await DAD.fetch(id: id)
   }
 }
