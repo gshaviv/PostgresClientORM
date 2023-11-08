@@ -46,7 +46,7 @@ public extension TableObject {
     .execute().first
   }
 
-  func insert(transation: UUID? = nil) async throws {
+  nonmutating func insert(transation: UUID? = nil) async throws {
     if let optionalid = id as? UUID?, optionalid == nil {
       id = UUID() as? IDType
     }
@@ -55,7 +55,7 @@ public extension TableObject {
     dbHash = try calculcateDbHash()
   }
 
-  func update(transaction: UUID? = nil) async throws {
+  nonmutating func update(transaction: UUID? = nil) async throws {
     guard id != nil else {
       throw PostgresError.valueIsNil
     }
@@ -87,7 +87,7 @@ public protocol DirtyTrackedTableObject {
 }
 
 public extension DirtyTrackedTableObject where Self: TableObject {
-  func save(transaction: UUID? = nil) async throws {
+  nonmutating func save(transaction: UUID? = nil) async throws {
     if id == nil || dbHash == nil {
       try await insert(transation: transaction)
     } else {
@@ -98,7 +98,7 @@ public extension DirtyTrackedTableObject where Self: TableObject {
     }
   }
 
-  func isDirty() throws -> Bool {
+  nonmutating func isDirty() throws -> Bool {
     try dbHash != calculcateDbHash()
   }
 }
