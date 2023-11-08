@@ -126,7 +126,7 @@ extension TablePersistMacro: ExtensionMacro {
     let codingKeyType = args.parse("codable", using: { CodingKeyType(rawValue: $0.description) }) ?? .none
     let trackDirty = args.parse("trackDirty", using: { Bool($0.description) }) ?? true
     
-    var conformingTo = ["TableObject"]
+    var conformingTo = ["TableObject", "FieldSubset"]
     if trackDirty {
       conformingTo.append("DirtyTrackedTableObject")
     }
@@ -321,8 +321,10 @@ public struct CodingKeysMacro: MemberMacro {
         let raw = property.dropBackticks()
         let keyValue: String
         switch keyType {
-        case .snakeCase: keyValue = raw.snakeCased()
-        default: keyValue = raw
+        case .snakeCase: 
+          keyValue = raw.snakeCased()
+        default: 
+          keyValue = raw
         }
         return raw == keyValue ? "case \(property)" : "case \(property) = \"\(keyValue)\""
       }
