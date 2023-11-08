@@ -121,7 +121,7 @@ public class OptionalParent<DAD: TableObject>: Codable {
     self.value = nil
   }
   
-  public init(_ value: DAD?) throws {
+  public init(_ value: DAD?) {
     self.value = value
     self.id = value?.id
   }
