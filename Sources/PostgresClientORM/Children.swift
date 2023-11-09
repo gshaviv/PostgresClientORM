@@ -46,11 +46,12 @@ public class Children<Child: TableObject>: Sequence, Codable {
     values[idx]
   }
   
-  public func load(parentId: PostgresValueConvertible) async throws {
+  public func load(parentId: PostgresValueConvertible, transaction id: UUID? = nil) async throws {
     var query = Child.select()
       .where {
         Child.column(self.referencingColumn) == parentId
       }
+      .transaction(id)
     
     if let sortKey {
       query = query.orderBy(sortKey, direction: sortDir)
@@ -106,9 +107,9 @@ public class Parent<DAD: TableObject>: Codable {
   
   public var type: DAD.Type { DAD.self }
   
-  public func get() async throws {
+  public func get(transaction tid: UUID? = nil) async throws {
     guard value == nil else { return }
-    value = try await DAD.fetch(id: id)
+    value = try await DAD.fetch(id: id, transaction: tid)
   }
 }
 
@@ -138,8 +139,8 @@ public class OptionalParent<DAD: TableObject>: Codable {
   
   public var type: DAD.Type { DAD.self }
   
-  public func get() async throws {
+  public func get(transaction tid: UUID? = nil) async throws {
     guard id != nil, value == nil else { return }
-    value = try await DAD.fetch(id: id)
+    value = try await DAD.fetch(id: id, transaction: tid)
   }
 }
