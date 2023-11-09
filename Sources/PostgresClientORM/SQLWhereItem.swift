@@ -29,8 +29,12 @@ public func And(@ArrayBuilder<SQLWhereItem> _ conditions: () -> [SQLWhereItem]) 
   SQLWhereItem(stringLiteral: "(\(conditions().map(\.description).joined(separator: " AND ")))")
 }
 
-public func == (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
-  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) = '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
+public func == (lhs: ColumnName, rhs: (some PostgresValueConvertible)?) -> SQLWhereItem {
+  if let rhs {
+    return SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) = '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
+  } else {
+    return SQLWhereItem(stringLiteral: "\(lhs) IS NULL")
+  }
 }
 
 public func < (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
