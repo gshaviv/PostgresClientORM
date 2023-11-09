@@ -20,9 +20,9 @@ public extension TableObject {
     SQLQuery(base: "SELECT * FROM \(tableName)")
   }
 
-  func delete(transation: UUID? = nil) async throws {
+  func delete(transaction: UUID? = nil) async throws {
     _ = try await SQLQuery(base: "DELETE FROM \(Self.tableName)")
-      .transaction(transation)
+      .transaction(transaction)
       .where {
         Self.idColumn == id
       }
