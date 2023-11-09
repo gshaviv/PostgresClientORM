@@ -87,7 +87,7 @@ public struct TablePersistMacro: MemberMacro {
             get {
                _dbHash.value
             }
-           nonmutating set {
+            nonmutating set {
                _dbHash.value = newValue
             }
           }
@@ -357,11 +357,19 @@ public struct CodingKeysMacro: MemberMacro {
     let encodeRegex = Regex {
       "func"
       OneOrMore(.whitespace)
-      "encode(to "
+      "encode(to"
+      OneOrMore(.any, .reluctant)
+      ":"
+      ZeroOrMore(.whitespace)
+      "Encoder"
     }
 
     let initRegex = Regex {
-      "init(from "
+      "init(from"
+      OneOrMore(.any, .reluctant)
+      ":"
+      ZeroOrMore(.whitespace)
+      "Decoder"
     }
 
     let membersText = declaration.memberBlock.members.map(\.trimmed.description)
