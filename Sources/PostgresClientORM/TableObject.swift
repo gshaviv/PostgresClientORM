@@ -93,11 +93,11 @@ public enum TableObjectError: Error {
   case unsupported
 }
 
-public protocol DirtyTrackedTableObject {
+public protocol TrackingDirty {
   var dbHash: Int? { get nonmutating set }
 }
 
-public extension DirtyTrackedTableObject where Self: TableObject {
+public extension TrackingDirty where Self: TableObject {
   nonmutating func save(transaction: UUID? = nil) async throws {
     if id == nil || dbHash == nil {
       try await insert(transation: transaction)
