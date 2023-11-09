@@ -52,3 +52,19 @@ public func >= (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhere
 public func != (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
   SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) <> '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
 }
+
+infix operator *=*: MultiplicationPrecedence
+infix operator =*: MultiplicationPrecedence
+infix operator *=: MultiplicationPrecedence
+
+public func *=* (lhs: ColumnName, rhs: String) -> SQLWhereItem {
+  SQLWhereItem(stringLiteral: "\(lhs) LIKE '%\(rhs)%'")
+}
+
+public func =* (lhs: ColumnName, rhs: String) -> SQLWhereItem {
+  SQLWhereItem(stringLiteral: "\(lhs) LIKE '\(rhs)%'")
+}
+
+public func *= (lhs: ColumnName, rhs: String) -> SQLWhereItem {
+  SQLWhereItem(stringLiteral: "\(lhs) LIKE '%\(rhs)'")
+}
