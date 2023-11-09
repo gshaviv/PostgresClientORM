@@ -57,6 +57,11 @@ public extension TableObject {
     guard id != nil else {
       throw PostgresError.valueIsNil
     }
+    if let self = self as? any SaveableTableObject {
+      guard try self.isDirty() else {
+        return
+      }
+    }
     let updateQuery = try RowWriter().encode(self, as: .partialUpdate).where {
       Self.idColumn == id
     }
@@ -100,9 +105,6 @@ public extension TrackingDirty where Self: TableObject {
     if id == nil || dbHash == nil {
       try await insert(transation: transaction)
     } else {
-      guard try isDirty() else {
-        return
-      }
       try await update(transaction: transaction)
     }
   }
