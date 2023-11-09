@@ -28,6 +28,10 @@ public extension TableObject {
       }
       .execute()
   }
+  
+  static func delete() -> SQLQuery<Self> {
+    SQLQuery(base: "DELETE FROM \(Self.tableName)")
+  }
 
   static func count() -> SQLQuery<CountRetrieval> {
     SQLQuery(base: "SELECT count(*) FROM \(tableName)")
