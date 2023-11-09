@@ -65,6 +65,17 @@ public extension TableObject {
     _ = try await updateQuery.transaction(transaction).execute()
     dbHash = try calculcateDbHash()
   }
+  
+  nonmutating func updateColumns(_ columns: ColumnName..., transaction: UUID? = nil) async throws {
+    guard id != nil else {
+      throw PostgresError.valueIsNil
+    }
+    let updateQuery = try RowWriter().encode(self, as: .specificPartialUpdate(columns)).where {
+      Self.idColumn == id
+    }
+    _ = try await updateQuery.transaction(transaction).execute()
+    dbHash = try calculcateDbHash()
+  }
 
   var dbHash: Int? {
     get { nil }

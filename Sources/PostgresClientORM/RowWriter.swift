@@ -17,6 +17,7 @@ public class RowWriter {
   public enum QueryType {
     case insert
     case partialUpdate
+    case specificPartialUpdate([ColumnName])
   }
 
   public func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key: CodingKey {
@@ -39,6 +40,15 @@ public class RowWriter {
       if let idIdx = variableNames.firstIndex(where: { $0 == T.idColumn.name }) {
         variableNames.remove(at: idIdx)
         values.remove(at: idIdx)
+      }
+      return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
+      
+    case .specificPartialUpdate(let cols):
+      for col in cols + [T.idColumn] {
+        if let idIdx = variableNames.firstIndex(where: { $0 == col.name }) {
+          variableNames.remove(at: idIdx)
+          values.remove(at: idIdx)
+        }     
       }
       return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
     }
