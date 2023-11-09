@@ -20,15 +20,13 @@ public extension TableObject {
     SQLQuery(base: "SELECT * FROM \(tableName)")
   }
 
-  static func delete() -> SQLQuery<Self> {
-    SQLQuery(base: "DELETE FROM \(tableName)")
-  }
-
-  func delete() async throws {
-    try await Self.delete().where {
-      Self.idColumn == id
-    }
-    .execute()
+  func delete(transation: UUID? = nil) async throws {
+    _ = try await SQLQuery(base: "DELETE FROM \(Self.tableName)")
+      .transaction(transation)
+      .where {
+        Self.idColumn == id
+      }
+      .execute()
   }
 
   static func count() -> SQLQuery<CountRetrieval> {
@@ -65,7 +63,7 @@ public extension TableObject {
     _ = try await updateQuery.transaction(transaction).execute()
     dbHash = try calculcateDbHash()
   }
-  
+
   nonmutating func updateColumns(_ columns: ColumnName..., transaction: UUID? = nil) async throws {
     guard id != nil else {
       throw PostgresError.valueIsNil
@@ -113,3 +111,5 @@ public extension TrackingDirty where Self: TableObject {
     try dbHash != calculcateDbHash()
   }
 }
+
+public typealias SaveableTableObject = TableObject & TrackingDirty

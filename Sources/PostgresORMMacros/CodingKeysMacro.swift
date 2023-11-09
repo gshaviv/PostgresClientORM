@@ -128,7 +128,7 @@ extension TablePersistMacro: ExtensionMacro {
     
     var conformingTo = ["TableObject", "FieldSubset"]
     if trackDirty {
-      conformingTo.append("DirtyTrackedTableObject")
+      conformingTo.append("TrackingDirty")
     }
     if codingKeyType != .none {
       conformingTo.append("Codable")
