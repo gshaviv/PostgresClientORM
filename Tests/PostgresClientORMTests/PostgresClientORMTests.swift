@@ -10,7 +10,8 @@ let testMacros: [String: Macro.Type] = [
     "Column": CustomCodingKeyMacro.self,
     "ColumnIgnored": CodingKeyIgnoredMacro.self,
     "TableObject": TablePersistMacro.self,
-    "ID": IDMacro.self
+    "ID": IDMacro.self,
+    "Null": NilMacro.self
 ]
 
 final class CodingKeysGeneratorTests: XCTestCase {
@@ -188,6 +189,20 @@ struct Entity {
       Test.idColumn == 23
     }).sqlString
     XCTAssertEqual(sql, "SELECT * FROM xxx WHERE id = 23")
+  }
+  
+  func testNilMacro() throws {
+    let source = """
+    ColumnName("col") == #Null
+    """
+    let expected = """
+    ColumnName("col") == Optional<Bool>.none
+    """
+    assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
+  }
+  
+  func testNilWhere() throws {
+    XCTAssertEqual("\(ColumnName("col") == #Null)", "col IS NULL", "Failed")
   }
 }
 

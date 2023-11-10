@@ -150,7 +150,7 @@ extension TableObject {
     guard let id else {
       throw TableObjectError.general("id is nil")
     }
-    try await self[keyPath: keypath].load(parentId: self.id)
+    try await self[keyPath: keypath].load(parentId: id)
     return self[keyPath: keypath].values
   }
 }
