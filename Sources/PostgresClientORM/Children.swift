@@ -146,7 +146,7 @@ public class OptionalParent<DAD: TableObject>: Codable {
 }
 
 public extension TableObject {
-  @discardableResult func loadChildren<C>(_ keypath: KeyPath<Self, Children<C>>, transaction: UUID? = nil) async throws -> [C] {
+  @discardableResult func loadChildren<ChildType>(_ keypath: KeyPath<Self, Children<ChildType>>, transaction: UUID? = nil) async throws -> [ChildType] {
     guard let id else {
       throw TableObjectError.general("id is nil")
     }
