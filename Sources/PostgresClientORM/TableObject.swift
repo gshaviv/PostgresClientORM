@@ -95,9 +95,18 @@ public extension TableObject {
   }
 }
 
-public enum TableObjectError: Error {
+public enum TableObjectError: Error, LocalizedError {
   case general(String)
   case unsupported
+  
+  public var errorDescription: String? {
+    switch self {
+    case let .general(message):
+      return "Error: \(message)"
+    case .unsupported:
+      return "Unsupported"
+    }
+  }
 }
 
 public protocol TrackingDirty {
