@@ -8,9 +8,11 @@
 import Foundation
 import PostgresClientKit
 
-public actor DatabaseActor {
-  public static let shared = DatabaseActor()
+public actor Database {
+  public static let handler = Database()
   private var activeTransaction: (task: Task<Void, Error>, id: UUID)?
+  
+  private init() {}
 
   func getCount(sqlQuery: SQLQuery<CountRetrieval>) async throws -> Int {
     if let activeTransaction, activeTransaction.id != sqlQuery.transaction {

@@ -38,6 +38,6 @@ public struct CountRetrieval: TableObject {
 
 public extension SQLQuery<CountRetrieval> {
   func execute() async throws -> Int {
-    try await DatabaseActor.shared.getCount(sqlQuery: self)
+    try await Database.handler.getCount(sqlQuery: self)
   }
 }

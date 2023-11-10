@@ -17,7 +17,7 @@ public class Migrations {
   }
   
   public func perform() async throws {
-    try await DatabaseActor.shared.execute("""
+    try await Database.handler.execute("""
     CREATE TABLE IF NOT EXISTS _Migrations (
       id varchar(80) UNIQUE NOT NULL PRIMARY KEY
     );
@@ -27,7 +27,7 @@ public class Migrations {
     let all: Set<String> = try await Set(PerformedMigration.select().execute().compactMap(\.id))
     if let idx = steps.firstIndex(where: { !all.contains($0.0) }) {
       for step in steps[idx...] {
-        try await DatabaseActor.shared.transaction { transactionId in
+        try await Database.handler.transaction { transactionId in
           try await step.1(transactionId)
           let mig = PerformedMigration()
           mig.id = step.0
@@ -242,15 +242,15 @@ public struct TableDefinition {
   }
   
   public func create(_ transaction: UUID) async throws {
-    try await DatabaseActor.shared.execute(sql(operation: .create), transaction: transaction)
+    try await Database.handler.execute(sql(operation: .create), transaction: transaction)
   }
   
   public func update(_ transaction: UUID) async throws {
-    try await DatabaseActor.shared.execute(sql(operation: .alter), transaction: transaction)
+    try await Database.handler.execute(sql(operation: .alter), transaction: transaction)
   }
   
   public func drop(_ transaction: UUID) async throws {
-    try await DatabaseActor.shared.execute(sql(operation: .drop), transaction: transaction)
+    try await Database.handler.execute(sql(operation: .drop), transaction: transaction)
   }
 }
 

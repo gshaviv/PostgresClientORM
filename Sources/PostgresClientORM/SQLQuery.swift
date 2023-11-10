@@ -31,7 +31,7 @@ public struct SQLQuery<TYPE: FieldSubset> {
   }
 
   @discardableResult public func execute() async throws -> [TYPE] {
-    try await DatabaseActor.shared.execute(sqlQuery: self)
+    try await Database.handler.execute(sqlQuery: self)
   }
 
   public func `where`(@ArrayBuilder<SQLWhereItem> _ expr: () -> [SQLWhereItem]) -> Self {

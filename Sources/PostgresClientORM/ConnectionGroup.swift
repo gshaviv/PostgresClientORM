@@ -11,6 +11,8 @@ import PostgresClientKit
 actor ConnectionGroup {
   static var shared = ConnectionGroup()
   var pending = 0
+  
+  private init() {}
 
   private static var configuration: PostgresClientKit.ConnectionConfiguration {
     var configuration = PostgresClientKit.ConnectionConfiguration()
