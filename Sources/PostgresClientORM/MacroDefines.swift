@@ -35,9 +35,6 @@ public macro ColumnIgnored() = #externalMacro(module: "PostgresORMMacros", type:
 @attached(peer)
 public macro CodingKeysIgnored() = #externalMacro(module: "PostgresORMMacros", type: "CodingKeyIgnoredMacro")
 
-@freestanding(expression)
-public macro Null() -> Optional<Bool> = #externalMacro(module: "PostgresORMMacros", type: "NilMacro")
-
 //@attached(accessor, names: named(get), named(set))
 //@attached(peer, names: named(_idHolder))
 //public macro ID() = #externalMacro(module: "PostgresORMMacros", type: "IDMacro")

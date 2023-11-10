@@ -30,8 +30,4 @@ extension Int64: PostgresValueConvertible {
   }
 }
 
-extension NSNull: PostgresValueConvertible {
-  public var postgresValue: PostgresValue {
-    PostgresValue(nil)
-  }
-}
+public let NULL = Optional<Bool>.none
