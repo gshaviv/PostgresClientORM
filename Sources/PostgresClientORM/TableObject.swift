@@ -102,9 +102,9 @@ public enum TableObjectError: Error, LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .general(message):
-      return "Error: \(message)"
+      return "TableObject Error: \(message)"
     case .unsupported:
-      return "Unsupported"
+      return "TableObject Unsupported"
     }
   }
 }
