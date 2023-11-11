@@ -45,7 +45,7 @@ public struct QueryResults<Type: FieldSubset>: Sequence, IteratorProtocol {
         return v
       } catch {
         ConnectionGroup.shared.release(connection: connection)
-        print("Error taversing list: \(error.localizedDescription)")
+        print("Error traversing query results: \(error.localizedDescription)")
         return nil
       }
     case .failure:
