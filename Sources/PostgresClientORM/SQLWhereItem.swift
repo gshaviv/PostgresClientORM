@@ -83,3 +83,12 @@ extension Array where Element: PostgresValueConvertible {
   }
 }
 
+extension SQLQuery {
+  func contains(_ column: ColumnName) -> SQLWhereItem {
+    SQLWhereItem(stringLiteral: "\(column) IN (\(self.sqlString))")
+  }
+  
+  func notContains(_ column: ColumnName) -> SQLWhereItem {
+    SQLWhereItem(stringLiteral: "\(column) NOT IN (\(self.sqlString))")
+  }
+}
