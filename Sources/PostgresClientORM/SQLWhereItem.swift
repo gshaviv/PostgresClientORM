@@ -72,3 +72,14 @@ public func =* (lhs: ColumnName, rhs: String) -> SQLWhereItem {
 public func *= (lhs: ColumnName, rhs: String) -> SQLWhereItem {
   SQLWhereItem(stringLiteral: "\(lhs) LIKE '%\(rhs)'")
 }
+
+extension Array where Element: PostgresValueConvertible {
+  func contains(_ column: ColumnName) -> SQLWhereItem {
+    SQLWhereItem(stringLiteral: "\(column) IN (\(map { "\($0.postgresValue)" }.joined(separator: ",")))")
+  }
+  
+  func notContains(_ column: ColumnName) -> SQLWhereItem {
+    SQLWhereItem(stringLiteral: "\(column) NOT IN (\(map { "\($0.postgresValue)" }.joined(separator: ",")))")
+  }
+}
+
