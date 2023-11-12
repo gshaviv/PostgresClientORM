@@ -12,13 +12,11 @@ public struct SQLQuery<TYPE: FieldSubset> {
   let base: String
   var filter: [String] = []
   var extras: [String] = []
-  var transaction: UUID?
 
-  public init(base: String, filter: [String] = [], extras: [String] = [], in transaction: UUID? = nil) {
+  public init(base: String, filter: [String] = [], extras: [String] = []) {
     self.base = base
     self.filter = filter
     self.extras = extras
-    self.transaction = transaction
   }
 
   public var sqlString: String {
@@ -30,16 +28,16 @@ public struct SQLQuery<TYPE: FieldSubset> {
     return elements.joined(separator: " ")
   }
 
-  @discardableResult public func execute() async throws -> [TYPE] {
-    try await Database.handler.execute(sqlQuery: self)
+  @discardableResult public func execute(transaction: UUID? = nil) async throws -> [TYPE] {
+    try await Database.handler.execute(sqlQuery: self, transaction: transaction)
   }
 
   public func `where`(@ArrayBuilder<SQLWhereItem> _ expr: () -> [SQLWhereItem]) -> Self {
-    SQLQuery(base: base, filter: filter + expr().map(\.description), extras: extras, in: transaction)
+    SQLQuery(base: base, filter: filter + expr().map(\.description), extras: extras)
   }
 
   public func limit(_ n: Int) -> SQLQuery<TYPE> {
-    SQLQuery(base: base, filter: filter, extras: extras + ["LIMIT \(n)"], in: transaction)
+    SQLQuery(base: base, filter: filter, extras: extras + ["LIMIT \(n)"])
   }
 
   public enum OrderBy: String {
@@ -48,19 +46,11 @@ public struct SQLQuery<TYPE: FieldSubset> {
   }
 
   public func orderBy(_ columns: ColumnName..., direction: OrderBy = .ascending) -> Self {
-    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(columns.map(\.name).joined(separator: ",")) \(direction == .descending ? direction.rawValue : "")"], in: transaction)
+    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(columns.map(\.name).joined(separator: ",")) \(direction == .descending ? direction.rawValue : "")"])
   }
 
   public func orderBy(_ pairs: (ColumnName, OrderBy)...) -> Self {
-    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(pairs.map { "\($0.0.name) \($0.1.rawValue)" }.joined(separator: ","))"], in: transaction)
-  }
-
-  public func transaction(_ id: UUID?) -> Self {
-    if let id {
-      return SQLQuery(base: base, filter: filter, extras: extras, in: id)
-    } else {
-      return self
-    }
+    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(pairs.map { "\($0.0.name) \($0.1.rawValue)" }.joined(separator: ","))"])
   }
 
   public var results: QueryResults<TYPE> {

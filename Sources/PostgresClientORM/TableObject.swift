@@ -21,12 +21,11 @@ public extension TableObject {
   }
 
   func delete(transaction: UUID? = nil) async throws {
-    _ = try await SQLQuery(base: "DELETE FROM \(Self.tableName)")
-      .transaction(transaction)
+    _ = try await SQLQuery<Self>(base: "DELETE FROM \(Self.tableName)")
       .where {
         Self.idColumn == id
       }
-      .execute()
+      .execute(transaction: transaction)
   }
   
   static func delete() -> SQLQuery<Self> {
@@ -44,16 +43,15 @@ public extension TableObject {
     return try await select().where {
       idColumn == id
     }
-    .transaction(transaction)
-    .execute().first
+    .execute(transaction: transaction).first
   }
 
-  nonmutating func insert(transation: UUID? = nil) async throws {
+  nonmutating func insert(transaction: UUID? = nil) async throws {
     if let optionalid = id as? UUID?, optionalid == nil {
       id = UUID() as? IDType
     }
     let insertQuery = try RowWriter().encode(self, as: .insert)
-    _ = try await insertQuery.transaction(transation).execute()
+    _ = try await insertQuery.execute(transaction: transaction)
     dbHash = try calculcateDbHash()
   }
 
@@ -69,7 +67,7 @@ public extension TableObject {
     let updateQuery = try RowWriter().encode(self, as: .partialUpdate).where {
       Self.idColumn == id
     }
-    _ = try await updateQuery.transaction(transaction).execute()
+    _ = try await updateQuery.execute(transaction: transaction)
     dbHash = try calculcateDbHash()
   }
 
@@ -80,7 +78,7 @@ public extension TableObject {
     let updateQuery = try RowWriter().encode(self, as: .specificPartialUpdate(columns)).where {
       Self.idColumn == id
     }
-    _ = try await updateQuery.transaction(transaction).execute()
+    _ = try await updateQuery.execute(transaction: transaction)
     dbHash = try calculcateDbHash()
   }
 
@@ -116,7 +114,7 @@ public protocol TrackingDirty {
 public extension TrackingDirty where Self: TableObject {
   nonmutating func save(transaction: UUID? = nil) async throws {
     if id == nil || dbHash == nil {
-      try await insert(transation: transaction)
+      try await insert(transaction: transaction)
     } else {
       try await update(transaction: transaction)
     }

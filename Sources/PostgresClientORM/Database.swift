@@ -14,8 +14,8 @@ public actor Database {
   
   private init() {}
 
-  func getCount(sqlQuery: SQLQuery<CountRetrieval>) async throws -> Int {
-    if let activeTransaction, activeTransaction.id != sqlQuery.transaction {
+  func getCount(sqlQuery: SQLQuery<CountRetrieval>, transaction: UUID? = nil) async throws -> Int {
+    if let activeTransaction, activeTransaction.id != transaction {
       try await activeTransaction.task.value
     }
 
@@ -32,8 +32,8 @@ public actor Database {
     return try row.get().columns[0].int()
   }
 
-  public func execute<TYPE: FieldSubset>(sqlQuery: SQLQuery<TYPE>) async throws -> [TYPE] {
-    if let activeTransaction, activeTransaction.id != sqlQuery.transaction {
+  public func execute<TYPE: FieldSubset>(sqlQuery: SQLQuery<TYPE>, transaction: UUID? = nil) async throws -> [TYPE] {
+    if let activeTransaction, activeTransaction.id != transaction {
       try await activeTransaction.task.value
     }
 

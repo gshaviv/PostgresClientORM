@@ -31,7 +31,7 @@ public class Migrations {
           try await step.1(transactionId)
           let mig = PerformedMigration()
           mig.id = step.0
-          try await mig.insert(transation: transactionId)
+          try await mig.insert(transaction: transactionId)
         }
       }
     }

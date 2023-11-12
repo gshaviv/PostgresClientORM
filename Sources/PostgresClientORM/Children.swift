@@ -51,14 +51,13 @@ public class Children<Child: TableObject>: Sequence, Codable {
       .where {
         Child.column(self.referencingColumn) == parentId
       }
-      .transaction(id)
     
     if let sortKey {
       query = query.orderBy(sortKey, direction: sortDir)
     }
     
     loadedValues = try await query
-      .execute()
+      .execute(transaction: id)
   }
   
   public var count: Int { values.count }
