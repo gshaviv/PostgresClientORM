@@ -106,9 +106,15 @@ public class Parent<DAD: TableObject>: Codable {
   
   public var type: DAD.Type { DAD.self }
   
-  public func get(transaction tid: UUID? = nil) async throws {
-    guard value == nil else { return }
+  @discardableResult public func get(transaction tid: UUID? = nil) async throws -> DAD {
+    if let value {
+      return value
+    }
     value = try await DAD.fetch(id: id, transaction: tid)
+    guard let value else {
+      throw TableObjectError.general("Missing parent of type \(type)")
+    }
+    return value
   }
 }
 
@@ -138,9 +144,15 @@ public class OptionalParent<DAD: TableObject>: Codable {
   
   public var type: DAD.Type { DAD.self }
   
-  public func get(transaction tid: UUID? = nil) async throws {
-    guard id != nil, value == nil else { return }
+  @discardableResult public func get(transaction tid: UUID? = nil) async throws -> DAD? {
+    guard id != nil else {
+      throw TableObjectError.general("Trying to get parent with nil id")
+    }
+    if let value {
+      return value
+    }
     value = try await DAD.fetch(id: id, transaction: tid)
+    return value
   }
 }
 
