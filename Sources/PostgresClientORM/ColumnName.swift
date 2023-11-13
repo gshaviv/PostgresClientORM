@@ -10,7 +10,7 @@ import Foundation
 public struct ColumnName: ExpressibleByStringLiteral, LosslessStringConvertible {
   public var name: String
   public var description: String {
-    name.contains(".") ? "\"\(name)\"" : name
+    name.contains(".") || name.contains("_") ? "\"\(name)\"" : name
   }
   
   public init(stringLiteral value: String) {
