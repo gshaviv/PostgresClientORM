@@ -27,9 +27,9 @@ public extension TableObject {
       }
       .execute(transaction: transaction)
   }
-  
+
   static func delete() -> SQLQuery<Self> {
-    SQLQuery(base: "DELETE FROM \(Self.tableName)")
+    SQLQuery(base: "DELETE FROM \(tableName)")
   }
 
   static func count() -> SQLQuery<CountRetrieval> {
@@ -88,11 +88,6 @@ public extension TableObject {
     }
   }
 
-  var dbHash: Int? {
-    get { nil }
-    nonmutating set {}
-  }
-
   func calculcateDbHash() throws -> Int {
     let hashable = try RowWriter().encode(self, as: .update)
     return hashable.sqlString.hashValue
@@ -102,7 +97,7 @@ public extension TableObject {
 public enum TableObjectError: Error, LocalizedError {
   case general(String)
   case unsupported
-  
+
   public var errorDescription: String? {
     switch self {
     case let .general(message):
