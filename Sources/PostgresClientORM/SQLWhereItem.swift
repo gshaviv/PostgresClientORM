@@ -38,23 +38,23 @@ public func == (lhs: ColumnName, rhs: (some PostgresValueConvertible)?) -> SQLWh
 }
 
 public func < (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
-  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) < '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
+  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) < '\(rhs.postgresValue)'" : "\(lhs) < \(rhs.postgresValue)")
 }
 
 public func <= (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
-  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) <= '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
+  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) <= '\(rhs.postgresValue)'" : "\(lhs) <= \(rhs.postgresValue)")
 }
 
 public func > (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
-  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) > '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
+  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) > '\(rhs.postgresValue)'" : "\(lhs) > \(rhs.postgresValue)")
 }
 
 public func >= (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
-  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) >= '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
+  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) >= '\(rhs.postgresValue)'" : "\(lhs) >= \(rhs.postgresValue)")
 }
 
 public func != (lhs: ColumnName, rhs: some PostgresValueConvertible) -> SQLWhereItem {
-  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) <> '\(rhs.postgresValue)'" : "\(lhs) = \(rhs.postgresValue)")
+  SQLWhereItem(stringLiteral: rhs is QuoteSQLValue ? "\(lhs) <> '\(rhs.postgresValue)'" : "\(lhs) <> \(rhs.postgresValue)")
 }
 
 infix operator *=*: MultiplicationPrecedence
