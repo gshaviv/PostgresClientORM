@@ -10,7 +10,7 @@ import Foundation
 public struct ColumnName: ExpressibleByStringLiteral, LosslessStringConvertible {
   public var name: String
   public var description: String {
-    name.contains(".") || name.contains("_") ? "\"\(name)\"" : name
+    CharacterSet.lowercaseLetters.isSuperset(of: CharacterSet(charactersIn: name)) ? name : "\"\(name)\""
   }
   
   public init(stringLiteral value: String) {
