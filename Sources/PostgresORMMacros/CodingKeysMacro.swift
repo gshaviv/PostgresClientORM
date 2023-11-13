@@ -78,7 +78,7 @@ public struct TablePersistMacro: MemberMacro {
       case (false, _):
         return []
       case (true, false):
-        return ["private var dbHash: Int?"]
+        return ["var dbHash: Int?"]
       case (true, true):
         return [
           "private let _dbHash = OptionalContainer<Int>()",
