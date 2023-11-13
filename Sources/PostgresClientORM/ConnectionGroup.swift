@@ -22,7 +22,7 @@ actor ConnectionGroup {
       configuration.host = ProcessInfo.processInfo.environment["DATABASE_HOST"] ?? "localhost" // "host.docker.internal"
       configuration.database =  ProcessInfo.processInfo.environment["DATABASE_NAME"] ?? "db"
       configuration.user =  ProcessInfo.processInfo.environment["DATABASE_USER"] ?? "user"
-      configuration.credential = .scramSHA256(password:  ProcessInfo.processInfo.environment["DATABASE_PASSWROD"] ?? "shh...")
+      configuration.credential = .cleartextPassword(password:  ProcessInfo.processInfo.environment["DATABASE_PASSWROD"] ?? "shh...")
       configuration.ssl = Bool( ProcessInfo.processInfo.environment["DATABASE_SSL"] ?? "false") ?? false
       configuration.port = Int( ProcessInfo.processInfo.environment["DATABASE_PORT"] ?? "5432") ?? 5432
     }

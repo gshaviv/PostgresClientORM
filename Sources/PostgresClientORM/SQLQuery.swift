@@ -81,7 +81,7 @@ extension PostgresClientKit.ConnectionConfiguration {
       self.user = user
     }
     if let password = components.password {
-      credential = .scramSHA256(password: password)
+      credential = .cleartextPassword(password: password)
     }
     if components.queryItems?.filter({ $0.name.lowercased() == "sslmode" }).first?.value == "disable" {
       ssl = false
