@@ -52,7 +52,9 @@ public extension TableObject {
     }
     let insertQuery = try RowWriter().encode(self, as: .insert)
     _ = try await insertQuery.execute(transaction: transaction)
-    dbHash = try calculcateDbHash()
+    if let saveableSelf = self as? any SaveableTableObject {
+      saveableSelf.dbHash = try saveableSelf.calculcateDbHash()
+    }
   }
 
   nonmutating func update(transaction: UUID? = nil) async throws {
@@ -68,7 +70,9 @@ public extension TableObject {
       Self.idColumn == id
     }
     _ = try await updateQuery.execute(transaction: transaction)
-    dbHash = try calculcateDbHash()
+    if let saveableSelf = self as? any SaveableTableObject {
+      saveableSelf.dbHash = try saveableSelf.calculcateDbHash()
+    }
   }
 
   nonmutating func updateColumns(_ columns: ColumnName..., transaction: UUID? = nil) async throws {
@@ -79,7 +83,9 @@ public extension TableObject {
       Self.idColumn == id
     }
     _ = try await updateQuery.execute(transaction: transaction)
-    dbHash = try calculcateDbHash()
+    if let saveableSelf = self as? any SaveableTableObject {
+      saveableSelf.dbHash = try saveableSelf.calculcateDbHash()
+    }
   }
 
   var dbHash: Int? {
