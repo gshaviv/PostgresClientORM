@@ -66,7 +66,7 @@ private struct SQLKeyedEncodingContainer<K: CodingKey>: KeyedEncodingContainerPr
   }
   
   mutating func encode(_ value: Bool, forKey key: K) throws {
-    try appendValues(key.stringValue, value.postgresValue.string())
+    try appendValues(key.stringValue, "'\(value.postgresValue.string())'")
   }
   
   mutating func encode(_ value: String, forKey key: K) throws {
