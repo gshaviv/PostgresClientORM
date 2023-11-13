@@ -46,11 +46,11 @@ public struct SQLQuery<TYPE: FieldSubset> {
   }
 
   public func orderBy(_ columns: ColumnName..., direction: OrderBy = .ascending) -> Self {
-    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(columns.map(\.name).joined(separator: ",")) \(direction == .descending ? direction.rawValue : "")"])
+    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(columns.map(\.description).joined(separator: ",")) \(direction == .descending ? direction.rawValue : "")"])
   }
 
   public func orderBy(_ pairs: (ColumnName, OrderBy)...) -> Self {
-    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(pairs.map { "\($0.0.name) \($0.1.rawValue)" }.joined(separator: ","))"])
+    SQLQuery(base: base, filter: filter, extras: extras + ["ORDER BY \(pairs.map { "\($0.0.description) \($0.1.rawValue)" }.joined(separator: ","))"])
   }
 
   public var results: QueryResults<TYPE> {
