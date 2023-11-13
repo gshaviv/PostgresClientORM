@@ -73,7 +73,7 @@ public actor Database {
       let decoder = RowReader(columns: names, row: try row.get())
       let v = try decoder.decode(TYPE.self)
       
-      if let v = v as? any TableObject {
+      if let v = v as? any SaveableTableObject {
         v.dbHash = try v.calculcateDbHash()
       }
       items.append(v)

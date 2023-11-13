@@ -39,7 +39,7 @@ public struct QueryResults<Type: FieldSubset>: Sequence, IteratorProtocol {
       do {
         let decoder = RowReader(columns: names, row: row)
         let v = try decoder.decode(Type.self)
-        if let v = v as? any TableObject {
+        if let v = v as? any SaveableTableObject {
           v.dbHash = try v.calculcateDbHash()
         }
         return v
