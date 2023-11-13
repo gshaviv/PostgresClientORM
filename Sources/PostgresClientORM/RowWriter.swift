@@ -16,8 +16,8 @@ public class RowWriter {
   
   public enum QueryType {
     case insert
-    case partialUpdate
-    case specificPartialUpdate([ColumnName])
+    case update
+    case updateColumns([ColumnName])
   }
 
   public func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key: CodingKey {
@@ -34,23 +34,23 @@ public class RowWriter {
     try value.encode(row: self)
     switch queryType {
     case .insert:
-      return SQLQuery(base: "INSERT INTO \(T.tableName) (\(variableNames.joined(separator: ","))) VALUES (\(values.joined(separator: ",")))")
+      return SQLQuery(base: "INSERT INTO \(T.tableName) (\(variableNames.map { ColumnName(stringLiteral: $0).description }.joined(separator: ","))) VALUES (\(values.joined(separator: ",")))")
       
-    case .partialUpdate:
+    case .update:
       if let idIdx = variableNames.firstIndex(where: { $0 == T.idColumn.name }) {
         variableNames.remove(at: idIdx)
         values.remove(at: idIdx)
       }
-      return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
+      return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames.map { ColumnName(stringLiteral: $0).description }, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
       
-    case .specificPartialUpdate(let cols):
+    case .updateColumns(let cols):
       for col in cols + [T.idColumn] {
         if let idIdx = variableNames.firstIndex(where: { $0 == col.name }) {
           variableNames.remove(at: idIdx)
           values.remove(at: idIdx)
         }     
       }
-      return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
+      return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames.map { ColumnName(stringLiteral: $0).description }, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
     }
   }
 }

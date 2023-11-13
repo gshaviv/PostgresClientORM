@@ -66,7 +66,7 @@ public extension TableObject {
         return
       }
     }
-    let updateQuery = try RowWriter().encode(self, as: .partialUpdate).where {
+    let updateQuery = try RowWriter().encode(self, as: .update).where {
       Self.idColumn == id
     }
     _ = try await updateQuery.execute(transaction: transaction)
@@ -79,7 +79,7 @@ public extension TableObject {
     guard id != nil else {
       throw PostgresError.valueIsNil
     }
-    let updateQuery = try RowWriter().encode(self, as: .specificPartialUpdate(columns)).where {
+    let updateQuery = try RowWriter().encode(self, as: .updateColumns(columns)).where {
       Self.idColumn == id
     }
     _ = try await updateQuery.execute(transaction: transaction)
@@ -94,7 +94,7 @@ public extension TableObject {
   }
 
   func calculcateDbHash() throws -> Int {
-    let hashable = try RowWriter().encode(self, as: .partialUpdate)
+    let hashable = try RowWriter().encode(self, as: .update)
     return hashable.sqlString.hashValue
   }
 }
