@@ -6,43 +6,45 @@
 //
 
 import Foundation
-import PostgresClientKit
+import PostgresNIO
 
 public class RowWriter {
   public var codingPath: [CodingKey] = []
   public var userInfo: [CodingUserInfoKey: Any] = [:]
   fileprivate var variableNames = [String]()
-  fileprivate var values = [String]()
+  fileprivate var values = [PostgresEncodable?]()
+  private let prefix: String
+  private weak var parentWriter: RowWriter?
+  
+  init(prefix: String = "", parent: RowWriter? = nil) {
+    self.prefix = prefix.isEmpty ? prefix : "\(prefix)_"
+    self.parentWriter = parent
+  }
   
   public enum QueryType {
     case insert
     case update
     case updateColumns([ColumnName])
   }
-
-  public func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key: CodingKey {
-    KeyedEncodingContainer(
-      SQLKeyedEncodingContainer<Key>(type: type, codingPath: codingPath,
-                                appendValues: { [weak self] name, value in
-                                  self?.variableNames.append(name)
-                                  self?.values.append(value)
-                                })
-    )
+  
+  public func encoder<Key>(keyedBy tape: Key.Type) -> RowEncoder<Key> where Key: CodingKey {
+    RowEncoder(prefix: prefix, writer: parentWriter ?? self)
   }
   
-  public func encode<T: TableObject>(_ value: T, as queryType: RowWriter.QueryType) throws -> SQLQuery<T> {
+  public func encode<T: TableObject>(_ value: T, as queryType: RowWriter.QueryType) throws -> Query<T> {
     try value.encode(row: self)
     switch queryType {
     case .insert:
-      return SQLQuery(base: "INSERT INTO \(T.tableName) (\(variableNames.map { ColumnName(stringLiteral: $0).description }.joined(separator: ","))) VALUES (\(values.joined(separator: ",")))")
+      let sql = "INSERT INTO \(T.tableName) (\(variableNames.map { ColumnName(stringLiteral: $0).description }.joined(separator: ","))) VALUES (\((1 ... values.count).map { "\($0)" }.joined(separator: ",")))"
+      return try Query(sql: sql, variables: values)
       
     case .update:
       if let idIdx = variableNames.firstIndex(where: { $0 == T.idColumn.name }) {
         variableNames.remove(at: idIdx)
         values.remove(at: idIdx)
       }
-      return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames.map { ColumnName(stringLiteral: $0).description }, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
-      
+      let sql = "UPDATE \(T.tableName) SET \(variableNames.map { ColumnName(stringLiteral: $0).description }.enumerated().map { "\($0.element) = $\($0.offset + 1)" }.joined(separator: ","))"
+      return try Query(sql: sql, variables: values)
     case .updateColumns(let cols):
       for col in cols + [T.idColumn] {
         if let idIdx = variableNames.firstIndex(where: { $0 == col.name }) {
@@ -50,108 +52,48 @@ public class RowWriter {
           values.remove(at: idIdx)
         }     
       }
-      return SQLQuery(base: "UPDATE \(T.tableName) SET \(zip(variableNames.map { ColumnName(stringLiteral: $0).description }, values).map { "\($0.0) = \($0.1)" }.joined(separator: ","))")
+      let sql = "UPDATE \(T.tableName) SET \(variableNames.map { ColumnName(stringLiteral: $0).description }.enumerated().map { "\($0.element) = $\($0.offset + 1)" }.joined(separator: ","))"
+      return try Query(sql: sql, variables: values)
     }
   }
 }
 
-private struct SQLKeyedEncodingContainer<K: CodingKey>: KeyedEncodingContainerProtocol {
-  typealias Key = K
-  var type: K.Type
-  var codingPath: [CodingKey]
-  var appendValues: (String, String) -> Void
-
-  mutating func encodeNil(forKey key: K) throws {
-    appendValues(key.stringValue, "NULL")
+public struct RowEncoder<Key: CodingKey> {
+  let prefix: String
+  let writer: RowWriter
+  
+  init(prefix: String = "", writer: RowWriter) {
+    self.prefix = prefix
+    self.writer = writer
   }
   
-  mutating func encode(_ value: Bool, forKey key: K) throws {
-    try appendValues(key.stringValue, "'\(value.postgresValue.string())'")
+  public func callAsFunction<T>(_ value: T, forKey key: Key) throws where T: PostgresEncodable {
+    writer.values.append(value)
+    writer.variableNames.append(prefix + key.stringValue)
   }
   
-  mutating func encode(_ value: String, forKey key: K) throws {
-    appendValues(key.stringValue, "'\(value)'")
-  }
-  
-  mutating func encode(_ value: Double, forKey key: K) throws {
-    try appendValues(key.stringValue, value.postgresValue.string())
-  }
-  
-  mutating func encode(_ value: Float, forKey key: K) throws {
-    try appendValues(key.stringValue, Double(value).postgresValue.string())
-  }
-  
-  mutating func encode(_ value: Int, forKey key: K) throws {
-    try appendValues(key.stringValue, value.postgresValue.string())
-  }
-  
-  mutating func encode(_ value: Int8, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: Int16, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: Int32, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: Int64, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: UInt, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: UInt8, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: UInt16, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: UInt32, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-  
-  mutating func encode(_ value: UInt64, forKey key: K) throws {
-    appendValues(key.stringValue, "\(value)")
-  }
-      
-  mutating func encode(_ value: some Encodable, forKey key: K) throws {
-    if let value = value as? any FieldSubset {
-      let enc = RowWriter()
-      try value.encode(row: enc)
-      zip(enc.variableNames, enc.values).forEach {
-        appendValues("\(key.stringValue)_\($0.0)", $0.1)
-      }
-    } else {
-      let enc = JSONEncoder()
-      let data = try enc.encode(value)
-      if let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) {
-        appendValues(key.stringValue, "'\(str)'")
-      } else {
-        throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: codingPath + [key], debugDescription: "Invalid JSON"))
-      }
+  public func callAsFunction<T>(_ value: Optional<T>, forKey key: Key) throws where T: PostgresEncodable {
+    if let value {
+      writer.values.append(value)
+      writer.variableNames.append(prefix + key.stringValue)
     }
   }
   
-  mutating func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type, forKey key: K) -> KeyedEncodingContainer<NestedKey> where NestedKey: CodingKey {
-    fatalError("Unsupported")
+  public func callAsFunction<T>(_ value: T, forKey key: Key) throws where T: FieldSubset {
+    let subWriter = RowWriter(prefix: prefix + key.stringValue, parent: writer)
+    try value.encode(row: subWriter)
   }
   
-  mutating func nestedUnkeyedContainer(forKey key: K) -> UnkeyedEncodingContainer {
-    fatalError("Unsupported")
+  public func callAsFunction(_ value: Int8, forKey key: Key) throws {
+    writer.values.append(Int(value))
+    writer.variableNames.append(prefix + key.stringValue)
   }
   
-  mutating func superEncoder() -> Encoder {
-    fatalError("Unsupported")
-  }
-  
-  mutating func superEncoder(forKey key: K) -> Encoder {
-    fatalError("Unsupported")
+  public func callAsFunction(_ value: Int8?, forKey key: Key) throws {
+    if let value {
+      writer.variableNames.append(prefix + key.stringValue)
+      writer.values.append(Int(value))
+    }
   }
 }
+

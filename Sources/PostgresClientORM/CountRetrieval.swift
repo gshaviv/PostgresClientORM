@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import PostgresClientKit
+import PostgresNIO
 
 public struct CountRetrieval: TableObject {
   public static var idColumn: ColumnName { column(.count) }
@@ -17,7 +17,6 @@ public struct CountRetrieval: TableObject {
   }
 
   let _idHolder = OptionalContainer<Int>()
-  @DBHash public var dbHash: Int?
   public var id: Int? {
     get { _idHolder.value }
     nonmutating set { _idHolder.value = newValue }
@@ -26,17 +25,17 @@ public struct CountRetrieval: TableObject {
   public static let tableName = ""
   
   public init(row: RowReader) throws {
-    let container = try row.container(keyedBy: CodingKeys.self)
-    self.count = try container.decode(Int.self, forKey: .count)
+    let decode = row.decoder(keyedBy: CodingKeys.self)
+    self.count = try decode(Int.self, forKey: .count)
   }
   
   public func encode(row: RowWriter) throws {
-    var container = row.container(keyedBy: CodingKeys.self)
-    try container.encode(self.count, forKey: .count)
+    let encode = row.encoder(keyedBy: CodingKeys.self)
+    try encode(self.count, forKey: .count)
   }
 }
 
-public extension SQLQuery<CountRetrieval> {
+public extension Query<CountRetrieval> {
   func execute(transaction: UUID? = nil) async throws -> Int {
     try await Database.handler.getCount(sqlQuery: self, transaction: transaction)
   }

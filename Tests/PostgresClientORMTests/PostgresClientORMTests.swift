@@ -1,6 +1,5 @@
 @testable import PostgresORMMacros
 @testable import PostgresClientORM
-import PostgresClientKit
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
@@ -93,23 +92,23 @@ struct Entity {
     }
 
     init(row: RowReader) throws {
-        let container = try row.container(keyedBy: Columns.self)
-        self.galaxy = try container.decode(Parent<Galaxy>.self, forKey: .galaxy)
-        self.otherClass = try container.decode(Classic.self, forKey: .otherClass)
-        self.currentValue = try container.decode(Int.self, forKey: .currentValue)
-        self.count = try container.decode(Int.self, forKey: .count)
-        self.protocol = try container.decode(String.self, forKey: .protocol)
-        self._idHolder.value = try container.decode(String.self, forKey: .id)
+        let decode = row.decoder(keyedBy: Columns.self)
+        self.galaxy = try decode(Parent<Galaxy>.self, forKey: .galaxy)
+        self.otherClass = try decode(Classic.self, forKey: .otherClass)
+        self.currentValue = try decode(Int.self, forKey: .currentValue)
+        self.count = try decode(Int.self, forKey: .count)
+        self.protocol = try decode(String.self, forKey: .protocol)
+        self._idHolder.value = try decode(String.self, forKey: .id)
     }
 
     func encode(row: RowWriter) throws {
-        var container = row.container(keyedBy: Columns.self)
-        try container.encode(self.galaxy, forKey: .galaxy)
-        try container.encode(self.otherClass, forKey: .otherClass)
-        try container.encode(self.currentValue, forKey: .currentValue)
-        try container.encode(self.count, forKey: .count)
-        try container.encode(self.protocol, forKey: .protocol)
-        try container.encode(self.id, forKey: .id)
+        let encode = row.encoder(keyedBy: Columns.self)
+        try encode(self.galaxy, forKey: .galaxy)
+        try encode(self.otherClass, forKey: .otherClass)
+        try encode(self.currentValue, forKey: .currentValue)
+        try encode(self.count, forKey: .count)
+        try encode(self.protocol, forKey: .protocol)
+        try encode(self.id, forKey: .id)
     }
 
     enum CodingKeys: String, CodingKey {
@@ -184,10 +183,11 @@ struct Entity {
   }
 
   func testInt64() throws {
-    let sql = Test.select().where({
+    let query = try Test.select().where({
       Test.idColumn == 23
-    }).sqlString
-    XCTAssertEqual(sql, "SELECT * FROM xxx WHERE id = 23")
+    })
+    XCTAssertEqual(query.sqlString, "SELECT * FROM xxx WHERE id = $1")
+    XCTAssertEqual(query.bindings.count, 1)
   }
   
   func testNilWhere() throws {

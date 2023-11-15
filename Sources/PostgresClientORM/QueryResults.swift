@@ -6,51 +6,43 @@
 //
 
 import Foundation
-import PostgresClientKit
+import PostgresNIO
 
-public struct QueryResults<Type: FieldSubset>: Sequence, IteratorProtocol {
-  private let connection: Connection
-  private let statement: Statement
-  private let cursor: Cursor
-  private var names: [String] = []
+public struct QueryResults<Type: FieldSubset>: AsyncSequence, AsyncIteratorProtocol {
+  public typealias AsyncIterator = Self
+  public typealias Element = Type
+  
+  private var query: PostgresQuery
+  private var connection: PostgresConnection?
+  private var result: PostgresRowSequence?
+  private var iterator: PostgresRowSequence.AsyncIterator?
 
-  init(query: SQLQuery<Type>) async throws {
-    connection = try await ConnectionGroup.shared.obtain()
-    statement = try connection.prepareStatement(text: query.sqlString)
-    cursor = try statement.execute(retrieveColumnMetadata: true)
-    if let names = cursor.columns?.map(\.name) {
-      self.names = names
-    } else {
-      names = []
-    }
+  init(query: Query<Type>) {
+    self.query = query.postgresQuery
+   }
+  
+  public func makeAsyncIterator() -> QueryResults<Type> {
+    self
   }
 
-  public func next() -> Type? {
-    guard !names.isEmpty else {
-      ConnectionGroup.shared.release(connection: connection)
-      return nil
+  public mutating func next() async throws -> Type? {
+    if iterator == nil {
+      let connection = try await ConnectionGroup.shared.obtain()
+      let result = try await connection.query(query, logger: connection.logger)
+      iterator = result.makeAsyncIterator()
+      self.connection = connection
+      self.result = result
     }
-    guard let result = cursor.next() else {
-      ConnectionGroup.shared.release(connection: connection)
-      return nil
-    }
-    switch result {
-    case let .success(row):
-      do {
-        let decoder = RowReader(columns: names, row: row)
-        let v = try decoder.decode(Type.self)
-        if let v = v as? any SaveableTableObject {
-          v.dbHash = try v.calculcateDbHash()
-        }
-        return v
-      } catch {
+    guard let row = try await iterator?.next() else {
+      if let connection {
         ConnectionGroup.shared.release(connection: connection)
-        print("Error traversing query results: \(error.localizedDescription)")
-        return nil
       }
-    case .failure:
-      ConnectionGroup.shared.release(connection: connection)
       return nil
     }
+    let v = try RowReader(row: row).decode(Type.self)
+    if let v = v as? any SaveableTableObject {
+      v.dbHash = try v.calculcateDbHash()
+    }
+    return v
   }
 }

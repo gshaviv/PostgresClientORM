@@ -263,31 +263,28 @@ public struct CodingKeysMacro: MemberMacro {
 
     var initRowDecl = ["""
     init(row: RowReader) throws {
-    let container = try row.container(keyedBy: Columns.self)
+    let decode = row.decoder(keyedBy: Columns.self)
     """]
 
     var encodeRowDecl = ["""
     func encode(row: RowWriter) throws {
-    var container = row.container(keyedBy: Columns.self)
+    let encode = row.encoder(keyedBy: Columns.self)
     """]
 
     for (name, type) in members {
       let cleanName = name.description.trimmingCharacters(in: CharacterSet(charactersIn: "` "))
-      if type.is(OptionalTypeSyntax.self) {
-        encodeRowDecl.append("try container.encodeIfPresent(self.\(cleanName), forKey: .\(cleanName))")
-      } else if type.description != "Children" {
-        encodeRowDecl.append("try container.encode(self.\(cleanName), forKey: .\(cleanName))")
+      if type.description != "Children" {
+        encodeRowDecl.append("try encode(self.\(cleanName), forKey: .\(cleanName))")
       }
 
       if type.description != "Children" {
         if name.trimmed.description == "id", isStruct {
-          let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
-          initRowDecl.append("self._idHolder.value = try container.decode(\(baseType).self, forKey: .\(cleanName))")
+          initRowDecl.append("self._idHolder.value = try decode(\(type).self, forKey: .\(cleanName))")
         } else if type.is(OptionalTypeSyntax.self) {
           let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
-          initRowDecl.append("self.\(cleanName) = try container.decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
+          initRowDecl.append("self.\(cleanName) = try decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
         } else {
-          initRowDecl.append("self.\(cleanName) = try container.decode(\(type.trimmed).self, forKey: .\(cleanName))")
+          initRowDecl.append("self.\(cleanName) = try decode(\(type.trimmed).self, forKey: .\(cleanName))")
         }
       }
     }

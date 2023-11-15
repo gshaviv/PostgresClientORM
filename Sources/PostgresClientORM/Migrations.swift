@@ -6,13 +6,11 @@
 //
 
 import Foundation
-import PostgresClientKit
-
 
 public class Migrations {
-  private var steps: [(String, (UUID) async throws -> Void)] = []
+  private var steps: [(String, () async throws -> Void)] = []
   
-  public func add(_ name: String, block: @escaping (UUID) async throws -> Void) {
+  public func add(_ name: String, block: @escaping () async throws -> Void) {
     steps.append((name, block))
   }
   
@@ -27,12 +25,10 @@ public class Migrations {
     let all: Set<String> = try await Set(PerformedMigration.select().execute().compactMap(\.id))
     if let idx = steps.firstIndex(where: { !all.contains($0.0) }) {
       for step in steps[idx...] {
-        try await Database.handler.transaction { transactionId in
-          try await step.1(transactionId)
-          let mig = PerformedMigration()
-          mig.id = step.0
-          try await mig.insert(transaction: transactionId)
-        }
+        try await step.1()
+        let mig = PerformedMigration()
+        mig.id = step.0
+        try await mig.insert()
       }
     }
   }
@@ -95,7 +91,7 @@ public struct ColumnDefinitation {
     case notNull
     case primaryKey
     case foreignKey(table: String, column: String, onDelete: DeleteAction)
-    case defaultValue(PostgresValueConvertible)
+    case defaultValue(String)
   }
 
   public enum DeleteAction: String {
@@ -145,7 +141,7 @@ public struct ColumnDefinitation {
     ColumnDefinitation(name: name, type: type, operation: operation, constraints: constraints + [.foreignKey(table: table, column: column, onDelete: onDelete)])
   }
   
-  public func defaultValue(_ value: PostgresValueConvertible) -> Self {
+  public func defaultValue(_ value: String) -> Self {
     ColumnDefinitation(name: name, type: type, operation: operation, constraints: constraints + [.defaultValue(value)])
   }
   
@@ -159,7 +155,7 @@ public struct ColumnDefinitation {
       case .primaryKey:
         return "PRIMARY KEY"
       case let .defaultValue(value):
-        return "DEFAULT \(value.sqlString)"
+        return "DEFAULT \(value)"
       default:
         return nil
       }
@@ -261,4 +257,3 @@ public func column(_ name: String, type: ColumnType = .unknwon) -> ColumnDefinit
 public func table(_ name: String, @ArrayBuilder<ColumnDefinitation> columns: () throws -> [ColumnDefinitation] = { [] }) rethrows -> TableDefinition {
   try TableDefinition(name: name, columns: columns())
 }
-

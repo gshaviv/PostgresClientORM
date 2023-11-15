@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import PostgresClientKit
+import PostgresNIO
 
 public class Children<Child: TableObject>: Sequence, Codable {
   public typealias AsyncIterator = Children<Child>
@@ -14,9 +14,9 @@ public class Children<Child: TableObject>: Sequence, Codable {
   public let referencingColumn: Child.Columns
   public private(set) var loadedValues: [Child]?
   let sortKey: ColumnName?
-  let sortDir: SQLQuery<Child>.OrderBy
+  let sortDir: Query<Child>.OrderBy
   
-  public init(ofType childType: Child.Type, by childCol: Child.Columns, sortBy: ColumnName? = nil, order: SQLQuery<Child>.OrderBy = .ascending) {
+  public init(ofType childType: Child.Type, by childCol: Child.Columns, sortBy: ColumnName? = nil, order: Query<Child>.OrderBy = .ascending) {
     self.referencingColumn = childCol
     self.sortKey = sortBy
     self.sortDir = order
@@ -46,8 +46,8 @@ public class Children<Child: TableObject>: Sequence, Codable {
     values[idx]
   }
   
-  public func load(parentId: PostgresValueConvertible, transaction id: UUID? = nil) async throws {
-    var query = Child.select()
+  public func load(parentId: any PostgresCodable, transaction id: UUID? = nil) async throws {
+    var query = try Child.select()
       .where {
         Child.column(self.referencingColumn) == parentId
       }
@@ -66,7 +66,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
     loadedValues = nil
   }
   
-  public func reload(parentId: PostgresValueConvertible) async throws {
+  public func reload(parentId: any PostgresCodable) async throws {
     reset()
     try await load(parentId: parentId)
   }

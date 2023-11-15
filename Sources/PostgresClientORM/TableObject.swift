@@ -6,34 +6,34 @@
 //
 
 import Foundation
-import PostgresClientKit
+import PostgresNIO
 
 public protocol TableObject: FieldSubset {
   static var tableName: String { get }
-  associatedtype IDType: PostgresValueConvertible & Codable
+  associatedtype IDType: PostgresCodable & Codable
   var id: Self.IDType? { get nonmutating set }
   static var idColumn: ColumnName { get }
 }
 
 public extension TableObject {
-  static func select() -> SQLQuery<Self> {
-    SQLQuery(base: "SELECT * FROM \(tableName)")
+  static func select() -> Query<Self> {
+    Query(sql: "SELECT * FROM \(tableName)")
   }
 
   func delete(transaction: UUID? = nil) async throws {
-    _ = try await SQLQuery<Self>(base: "DELETE FROM \(Self.tableName)")
+    _ = try await Query<Self>(sql: "DELETE FROM \(Self.tableName)")
       .where {
         Self.idColumn == id
       }
       .execute(transaction: transaction)
   }
 
-  static func delete() -> SQLQuery<Self> {
-    SQLQuery(base: "DELETE FROM \(tableName)")
+  static func delete() -> Query<Self> {
+    Query(sql: "DELETE FROM \(tableName)")
   }
 
-  static func count() -> SQLQuery<CountRetrieval> {
-    SQLQuery(base: "SELECT count(*) FROM \(tableName)")
+  static func count() -> Query<CountRetrieval> {
+    Query(sql: "SELECT count(*) FROM \(tableName)")
   }
 
   static func fetch(id: IDType?, transaction: UUID? = nil) async throws -> Self? {
@@ -59,7 +59,7 @@ public extension TableObject {
 
   nonmutating func update(transaction: UUID? = nil) async throws {
     guard id != nil else {
-      throw PostgresError.valueIsNil
+      throw PostgresError.protocol("id is nil")
     }
     if let self = self as? any SaveableTableObject {
       guard try self.isDirty() else {
@@ -77,7 +77,7 @@ public extension TableObject {
 
   nonmutating func updateColumns(_ columns: ColumnName..., transaction: UUID? = nil) async throws {
     guard id != nil else {
-      throw PostgresError.valueIsNil
+      throw PostgresError.protocol("id is nil")
     }
     let updateQuery = try RowWriter().encode(self, as: .updateColumns(columns)).where {
       Self.idColumn == id

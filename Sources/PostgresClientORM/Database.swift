@@ -1,20 +1,20 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Guy Shaviv on 30/10/2023.
 //
 
 import Foundation
-import PostgresClientKit
+import PostgresNIO
 
 public actor Database {
   public static let handler = Database()
   private var activeTransaction: (task: Task<Void, Error>, id: UUID)?
-  
+
   private init() {}
 
-  func getCount(sqlQuery: SQLQuery<CountRetrieval>, transaction: UUID? = nil) async throws -> Int {
+  func getCount(sqlQuery: Query<CountRetrieval>, transaction: UUID? = nil) async throws -> Int {
     if let activeTransaction, activeTransaction.id != transaction {
       try await activeTransaction.task.value
     }
@@ -24,15 +24,14 @@ public actor Database {
       ConnectionGroup.shared.release(connection: connection)
     }
 
-    let statement = try connection.prepareStatement(text: sqlQuery.sqlString)
-    let cursor = try statement.execute(retrieveColumnMetadata: true)
-    guard let row = cursor.next() else {
-      throw TableObjectError.general("no count?")
+    let rows = try await connection.query(sqlQuery.postgresQuery, logger: connection.logger)
+    for try await count in rows.decode(Int.self) {
+      return count
     }
-    return try row.get().columns[0].int()
+    throw TableObjectError.general("no count")
   }
 
-  public func execute<TYPE: FieldSubset>(sqlQuery: SQLQuery<TYPE>, transaction: UUID? = nil) async throws -> [TYPE] {
+  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transaction: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != transaction {
       try await activeTransaction.task.value
     }
@@ -43,13 +42,13 @@ public actor Database {
     }
 
     var items = [TYPE]()
-    for item in try await sqlQuery.results {
+    for try await item in sqlQuery.results {
       items.append(item)
     }
 
     return items
   }
-  
+
   public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transaction id: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != id {
       try await activeTransaction.task.value
@@ -60,19 +59,15 @@ public actor Database {
       ConnectionGroup.shared.release(connection: connection)
     }
 
-    let statement = try connection.prepareStatement(text: sqlText)
-    let cursor = try statement.execute(retrieveColumnMetadata: true)
-    
-    guard let names = cursor.columns?.map(\.name) else {
-      return []
-    }
+    let rows = try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
+    var iterator = rows.makeAsyncIterator()
     
     var items = [TYPE]()
-    
-    for row in cursor {
-      let decoder = RowReader(columns: names, row: try row.get())
+
+    while let row = try await iterator.next() {
+      let decoder = RowReader(row: row)
       let v = try decoder.decode(TYPE.self)
-      
+
       if let v = v as? any SaveableTableObject {
         v.dbHash = try v.calculcateDbHash()
       }
@@ -81,7 +76,6 @@ public actor Database {
 
     return items
   }
-
 
   public func execute(_ sqlText: String, transaction id: UUID? = nil) async throws {
     if let activeTransaction, activeTransaction.id != id {
@@ -92,8 +86,7 @@ public actor Database {
       ConnectionGroup.shared.release(connection: connection)
     }
 
-    let statement = try connection.prepareStatement(text: sqlText)
-    _ = try statement.execute(retrieveColumnMetadata: true)
+    try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
   }
 
   public func transaction(_ transactionBlock: @escaping (_ transactionId: UUID) async throws -> Void) async throws {
@@ -108,16 +101,30 @@ public actor Database {
 
     let tid = UUID()
     activeTransaction = (task: Task<Void, Error> {
-      try connection.beginTransaction()
+      try await connection.beginTransaction()
       do {
         try await transactionBlock(tid)
-        try connection.commitTransaction()
+        try await connection.commitTransaction()
       } catch {
-        try connection.rollbackTransaction()
+        try await connection.rollbackTransaction()
       }
       self.activeTransaction = nil
     }, id: tid)
 
     try await activeTransaction?.task.value
+  }
+}
+
+public extension PostgresConnection {
+  func beginTransaction() async throws {
+    try await query("begin transaction", logger: logger)
+  }
+  
+  func commitTransaction() async throws {
+    try await query("commit", logger: logger)
+  }
+  
+  func rollbackTransaction() async throws {
+    try await query("rollback", logger: logger)
   }
 }

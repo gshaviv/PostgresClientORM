@@ -14,7 +14,7 @@ let package = Package(
       targets: ["PostgresClientORM"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/codewinsdotcom/PostgresClientKit", from: "1.0.0"),
+    .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.14.0"),
     .package(url: "https://github.com/apple/swift-syntax", from: "509.0.0"),
   ],
   targets: [
@@ -27,7 +27,7 @@ let package = Package(
     .target(
       name: "PostgresClientORM",
       dependencies: [
-        .product(name: "PostgresClientKit", package: "PostgresClientKit"),
+        .product(name: "PostgresNIO", package: "postgres-nio"),
         "PostgresORMMacros",
       ]),
     .testTarget(
