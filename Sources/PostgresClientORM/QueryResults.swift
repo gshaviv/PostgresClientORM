@@ -28,10 +28,10 @@ public struct QueryResults<Type: FieldSubset>: AsyncSequence, AsyncIteratorProto
   public mutating func next() async throws -> Type? {
     if iterator == nil {
       let connection = try await ConnectionGroup.shared.obtain()
-      let result = try await connection.query(query, logger: connection.logger)
-      iterator = result.makeAsyncIterator()
       self.connection = connection
+      let result = try await connection.query(query, logger: connection.logger)
       self.result = result
+      iterator = result.makeAsyncIterator()
     }
     guard let row = try await iterator?.next() else {
       if let connection {
