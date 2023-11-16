@@ -1,3 +1,5 @@
+import PostgresNIO
+
 public enum KeyType {
   case camelCase
   case snakeCase
@@ -19,14 +21,14 @@ public macro TableObject(columns: KeyType = .snakeCase, table: String, idType: A
 
 @attached(peer)
 public macro Column(name: String) = #externalMacro(
-    module: "PostgresORMMacros",
-    type: "CustomCodingKeyMacro"
+  module: "PostgresORMMacros",
+  type: "CustomCodingKeyMacro"
 )
 
 @attached(peer)
 public macro Coding(key: String) = #externalMacro(
-    module: "PostgresORMMacros",
-    type: "CustomCodingKeyMacro"
+  module: "PostgresORMMacros",
+  type: "CustomCodingKeyMacro"
 )
 
 @attached(peer)
@@ -35,6 +37,12 @@ public macro ColumnIgnored() = #externalMacro(module: "PostgresORMMacros", type:
 @attached(peer)
 public macro CodingKeysIgnored() = #externalMacro(module: "PostgresORMMacros", type: "CodingKeyIgnoredMacro")
 
-//@attached(accessor, names: named(get), named(set))
-//@attached(peer, names: named(_idHolder))
-//public macro ID() = #externalMacro(module: "PostgresORMMacros", type: "IDMacro")
+@attached(extension,
+          names:
+          named(psqlType),
+          named(psqlFormat),
+          named(encode(info:context:)),
+          named(init(from:type:format:context:)),
+          conformances:
+          PostgresCodable)
+public macro PostgresCodable() = #externalMacro(module: "PostgresORMMacros", type: "RawRepPCodableMacro")

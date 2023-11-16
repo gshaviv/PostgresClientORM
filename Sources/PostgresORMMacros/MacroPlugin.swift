@@ -8,5 +8,6 @@ struct PostgressORMMacros: CompilerPlugin {
         CustomCodingKeyMacro.self,
         CodingKeyIgnoredMacro.self,
         TablePersistMacro.self,
+        RawRepPCodableMacro.self,
     ]
 }

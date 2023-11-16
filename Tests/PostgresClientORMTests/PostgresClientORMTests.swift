@@ -9,7 +9,7 @@ let testMacros: [String: Macro.Type] = [
     "Column": CustomCodingKeyMacro.self,
     "ColumnIgnored": CodingKeyIgnoredMacro.self,
     "TableObject": TablePersistMacro.self,
-    "ID": IDMacro.self,
+    "PostgresCodable": RawRepPCodableMacro.self,
 ]
 
 final class CodingKeysGeneratorTests: XCTestCase {
@@ -192,6 +192,46 @@ struct Entity {
   
   func testNilWhere() throws {
     XCTAssertEqual("\(ColumnName("col") == NULL)", "col IS NULL", "Failed")
+  }
+  
+  func testPostgresCodableMacros() {
+      let source = """
+@PostgresCodable
+enum Test: String, Codable {
+  case one
+  case two
+}
+"""
+      let expected = """
+
+enum Test: String, Codable {
+  case one
+  case two
+}
+
+extension Test: PostgresCodable {
+    static var psqlType: PostgresDataType {
+      RawValue.psqlType
+    }
+    static var psqlFormat: PostgresFormat {
+      RawValue.psqlFormat
+    }
+    @inlinable
+    func encode(into byteBuffer: inout ByteBuffer, context: PostgresEncodingContext<some PostgresJSONEncoder>) {
+      rawValue.encode(into: &byteBuffer, context: context)
+    }
+    @inlinable
+    init(from buffer: inout ByteBuffer, type: PostgresDataType, format: PostgresFormat, context: PostgresDecodingContext<some PostgresJSONDecoder>) throws {
+      let raw = try RawValue(from: &buffer, type: type, format: format, context: context)
+      if let value = Self (rawValue: raw) {
+        self = value
+      } else {
+        throw PostgresDecodingError.Code.typeMismatch
+      }
+    }
+}
+"""
+      assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
 }
 
