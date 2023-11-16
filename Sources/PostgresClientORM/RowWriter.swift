@@ -35,7 +35,7 @@ public class RowWriter {
     try value.encode(row: self)
     switch queryType {
     case .insert:
-      let sql = "INSERT INTO \(T.tableName) (\(variableNames.map { ColumnName(stringLiteral: $0).description }.joined(separator: ","))) VALUES (\((1 ... values.count).map { "\($0)" }.joined(separator: ",")))"
+      let sql = "INSERT INTO \(T.tableName) (\(variableNames.map { ColumnName(stringLiteral: $0).description }.joined(separator: ","))) VALUES (\((1 ... values.count).map { "$\($0)" }.joined(separator: ",")))"
       return try Query(sql: sql, variables: values)
       
     case .update:
