@@ -42,7 +42,8 @@ public actor Database {
     }
 
     var items = [TYPE]()
-    for try await item in sqlQuery.results {
+    let results = sqlQuery.results
+    for try await item in results {
       items.append(item)
     }
 
