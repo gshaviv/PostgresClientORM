@@ -30,11 +30,7 @@ struct RawRepPCodableMacro: ExtensionMacro {
                              message: GeneratorDiagnostic(message: "Missing raw value", diagnosticID: .arguments, severity: .error)))
       return []
     }
-    guard !type.trimmedDescription.contains(".") else {
-      context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "Can only be applied to file level types", diagnosticID: .arguments, severity: .error)))
-      return []
-    }
+   
     switch rawType.trimmedDescription {
     case "String", "Int", "UInt8", "Int16":
       break
