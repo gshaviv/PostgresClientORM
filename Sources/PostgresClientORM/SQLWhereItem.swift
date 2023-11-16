@@ -15,12 +15,12 @@ public struct SQLWhereItem: ExpressibleByStringLiteral, LosslessStringConvertibl
 
   public init(stringLiteral value: String) {
     self.expression = value
-    binds = nil
+    self.binds = nil
   }
 
   public init(_ sql: String) {
     self.expression = sql
-    binds = nil
+    self.binds = nil
   }
 
   public init(_ sql: String, variables: [PostgresEncodable?]) {
@@ -93,7 +93,11 @@ public func < (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
 }
 
 public func < (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
-  SQLWhereItem("\(lhs) < \(rhs)")
+  if rhs.fromLiteral {
+    return lhs < rhs.description
+  } else {
+    return SQLWhereItem("\(lhs) < \(rhs)")
+  }
 }
 
 public func <= (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
@@ -101,7 +105,11 @@ public func <= (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
 }
 
 public func <= (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
-  SQLWhereItem("\(lhs) <= \(rhs)")
+  if rhs.fromLiteral {
+    return lhs <= rhs.description
+  } else {
+    return SQLWhereItem("\(lhs) <= \(rhs)")
+  }
 }
 
 public func > (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
@@ -109,7 +117,11 @@ public func > (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
 }
 
 public func > (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
-  SQLWhereItem("\(lhs) > \(rhs)")
+  if rhs.fromLiteral {
+    return lhs > rhs.description
+  } else {
+    return SQLWhereItem("\(lhs) > \(rhs)")
+  }
 }
 
 public func >= (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
@@ -117,7 +129,11 @@ public func >= (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
 }
 
 public func >= (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
-  SQLWhereItem("\(lhs) >= \(rhs)")
+  if rhs.fromLiteral {
+    return lhs >= rhs.description
+  } else {
+    return SQLWhereItem("\(lhs) >= \(rhs)")
+  }
 }
 
 public func != (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
@@ -125,7 +141,11 @@ public func != (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
 }
 
 public func != (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
-  SQLWhereItem("\(lhs) <> \(rhs)")
+  if rhs.fromLiteral {
+    return rhs != lhs.description
+  } else {
+    return SQLWhereItem("\(lhs) <> \(rhs)")
+  }
 }
 
 infix operator *=*: MultiplicationPrecedence
