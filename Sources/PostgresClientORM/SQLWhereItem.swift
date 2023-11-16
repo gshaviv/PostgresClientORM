@@ -81,7 +81,11 @@ public func == (lhs: ColumnName, rhs: (some PostgresEncodable)?) -> SQLWhereItem
 }
 
 public func == (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
-  SQLWhereItem("\(lhs) == \(rhs)")
+  if rhs.fromLiteral {
+    return lhs == rhs.description
+  } else {
+    return SQLWhereItem("\(lhs) == \(rhs)")
+  }
 }
 
 public func < (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {

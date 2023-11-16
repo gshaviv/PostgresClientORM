@@ -7,18 +7,21 @@
 
 import Foundation
 
-public struct ColumnName: ExpressibleByStringLiteral, LosslessStringConvertible {
+public struct ColumnName:  LosslessStringConvertible {
   public var name: String
+  internal let fromLiteral: Bool
   public var description: String {
     CharacterSet.lowercaseLetters.isSuperset(of: CharacterSet(charactersIn: name)) ? name : "\"\(name)\""
   }
   
   public init(stringLiteral value: String) {
     name = value
+    fromLiteral = true
   }
 
   public init(_ name: String) {
     self.name = name
+    fromLiteral = false
   }
 }
 
