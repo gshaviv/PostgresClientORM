@@ -25,7 +25,6 @@ public enum PostgresClientORM {
 
 actor ConnectionGroup {
   static var shared = ConnectionGroup()
-  var pending = 0
   
   private init() {}
 
@@ -45,24 +44,27 @@ actor ConnectionGroup {
   }
 
   var group: [PostgresConnection] = []
+  var inUse: [Int: PostgresConnection] = [:]
 
   func obtain() async throws -> PostgresConnection {
     if group.isEmpty {
-      guard pending < 24 else {
+      guard group.count + inUse.count < 24 else {
         throw TableObjectError.general("Too Many pending connections")
       }
-      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: group.count + pending, logger: PostgresClientORM.useLogger)
-      pending += 1
+      let id = group.count + inUse.count
+      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: id, logger: PostgresClientORM.useLogger)
+      inUse[id] = connection
       return connection
     } else {
-      pending += 1
-      return group.removeLast()
+      let outgoing = group.removeLast()
+      inUse[outgoing.id] = outgoing
+      return outgoing
     }
   }
 
   private func finished(connection: PostgresConnection) {
     group.append(connection)
-    pending -= 1
+    inUse[connection.id] = nil
   }
 
   nonisolated func release(connection: PostgresConnection) {
