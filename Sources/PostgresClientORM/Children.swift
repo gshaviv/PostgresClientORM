@@ -76,7 +76,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
   }
 }
 
-public class Parent<DAD: TableObject>: Codable {
+public class Parent<DAD: TableObject>: Codable, PostgresCodable {
   public private(set) var id: DAD.IDType
   public private(set) var value: DAD?
     
@@ -118,7 +118,7 @@ public class Parent<DAD: TableObject>: Codable {
   }
 }
 
-public class OptionalParent<DAD: TableObject>: Codable {
+public class OptionalParent<DAD: TableObject>: Codable, PostgresCodable {
   public private(set) var id: DAD.IDType?
   public private(set) var value: DAD?
     
