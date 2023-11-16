@@ -47,7 +47,7 @@ public struct RowDecoder<Key: CodingKey> {
   }
   
   public func callAsFunction<T>(_ type: T.Type, forKey key: Key) throws -> T where T: FieldSubset {
-    let reader = RowReader(prefix: prefix, row: row)
+    let reader = RowReader(prefix: prefix + key.stringValue, row: row)
     return try reader.decode(type)
   }
 
