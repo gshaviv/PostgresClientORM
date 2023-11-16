@@ -43,33 +43,30 @@ actor ConnectionGroup {
     }
   }
 
-  var group: [PostgresConnection] = []
-  var inUse: [Int: PostgresConnection] = [:]
+  var all: [PostgresConnection] = []
+  var available: [PostgresConnection] = []
 
   func obtain() async throws -> PostgresConnection {
-    if group.isEmpty {
-      guard group.count + inUse.count < 24 else {
+    if available.isEmpty {
+      guard all.count < 24 else {
         throw TableObjectError.general("Too Many pending connections")
       }
-      let id = group.count + inUse.count
-      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: id, logger: PostgresClientORM.useLogger)
-      inUse[id] = connection
+      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.useLogger)
+      all.append(connection)
       return connection
     } else {
-      let outgoing = group.removeLast()
-      inUse[outgoing.id] = outgoing
+      let outgoing = available.removeLast()
       return outgoing
     }
   }
 
   private func finished(connection: PostgresConnection) {
-    group.append(connection)
-    inUse[connection.id] = nil
+    available.append(connection)
   }
 
   nonisolated func release(connection: PostgresConnection) {
-    Task {
-      await finished(connection: connection)
+    Task.detached {
+      await self.finished(connection: connection)
     }
   }
 
