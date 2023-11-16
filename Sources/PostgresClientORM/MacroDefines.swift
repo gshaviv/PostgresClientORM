@@ -41,7 +41,7 @@ public macro CodingKeysIgnored() = #externalMacro(module: "PostgresORMMacros", t
           names:
           named(psqlType),
           named(psqlFormat),
-          named(encode(info:context:)),
+          named(encode(into:context:)),
           named(init(from:type:format:context:)),
           conformances:
           PostgresCodable)
