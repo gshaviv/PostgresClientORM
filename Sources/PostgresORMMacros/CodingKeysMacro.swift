@@ -280,9 +280,6 @@ public struct CodingKeysMacro: MemberMacro {
       if type.description != "Children" {
         if name.trimmed.description == "id", isStruct {
           initRowDecl.append("self._idHolder.value = try decode(\(type).self, forKey: .\(cleanName))")
-        } else if type.is(OptionalTypeSyntax.self) {
-          let baseType = type.description.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
-          initRowDecl.append("self.\(cleanName) = try decodeIfPresent(\(baseType).self, forKey: .\(cleanName))")
         } else {
           initRowDecl.append("self.\(cleanName) = try decode(\(type.trimmed).self, forKey: .\(cleanName))")
         }
