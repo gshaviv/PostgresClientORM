@@ -90,7 +90,7 @@ public extension TableObject {
 
   func calculcateDbHash() throws -> Int {
     let hashable = try RowWriter().encode(self, as: .update)
-    return hashable.sqlString.hashValue
+    return hashable.bindings.hashValue
   }
 }
 
