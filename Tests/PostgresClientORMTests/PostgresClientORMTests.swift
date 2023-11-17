@@ -177,10 +177,7 @@ struct Entity {
       assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
   
-  @TableObject(columns: .snakeCase, table: "xxx", idType: Int64.self)
-  struct Test {
-    var variable: Int
-  }
+
 
   func testInt64() throws {
     let query = try Test.select().where({
@@ -233,5 +230,15 @@ extension Test: PostgresCodable {
 """
       assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
+  
+  func testParentIsFieldsubset() {
+    XCTAssertTrue(Parent<Test>.self is any FieldSubset.Type)
+    let dad = Parent<Test>(80)
+    XCTAssertTrue(dad is any FieldSubset)
+  }
 }
 
+@TableObject(columns: .snakeCase, table: "xxx", idType: Int64.self)
+struct Test {
+  var variable: Int
+}

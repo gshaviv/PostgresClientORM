@@ -76,9 +76,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
   }
 }
 
-extension Parent: FieldSubset where  DAD.IDType == DAD.IDType._DecodableType {}
-
-public class Parent<DAD: TableObject>: Codable {
+public class Parent<DAD: TableObject>: Codable, FieldSubset {
   public private(set) var id: DAD.IDType
   public private(set) var value: DAD?
     
@@ -134,9 +132,10 @@ public class Parent<DAD: TableObject>: Codable {
   }
 }
 
-extension OptionalParent: FieldSubset where  DAD.IDType == DAD.IDType._DecodableType {}
-
-public class OptionalParent<DAD: TableObject>: Codable {
+public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
+   
+  
+  
   public private(set) var id: DAD.IDType?
   public private(set) var value: DAD?
     
@@ -177,9 +176,9 @@ public class OptionalParent<DAD: TableObject>: Codable {
     case root = ""
   }
   
-  public required init(row: RowReader) throws where DAD.IDType == DAD.IDType._DecodableType {
+  public required init(row: RowReader) throws {
     let decode = row.decoder(keyedBy: Columns.self)
-    self.id = try decode(Optional<DAD.IDType>.self, forKey: .root)
+    self.id = try decode(DAD.IDType.self, forKey: .root)
   }
   
   public func encode(row: RowWriter) throws {
