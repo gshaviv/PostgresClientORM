@@ -98,10 +98,10 @@ public struct RowDecoder<Key: CodingKey> {
 
 extension PostgresRandomAccessRow {
   subscript(path prefix: [String], key: CodingKey) -> PostgresCell {
-    self[(prefix + [key.stringValue]).joined(separator: "_")]
+    self[(prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")]
   }
   
   func contains(path prefix: [String] = [], key: CodingKey) -> Bool {
-    contains((prefix + [key.stringValue]).joined(separator: "_"))
+    contains((prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_"))
   }
 }

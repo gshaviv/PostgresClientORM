@@ -13,11 +13,11 @@ public class RowWriter {
   public var userInfo: [CodingUserInfoKey: Any] = [:]
   fileprivate var variableNames = [String]()
   fileprivate var values = [PostgresEncodable?]()
-  private let prefix: String
+  private let prefix: [String]
   private weak var parentWriter: RowWriter?
   
-  init(prefix: String = "", parent: RowWriter? = nil) {
-    self.prefix = prefix.isEmpty ? prefix : "\(prefix)_"
+  init(prefix: [String] = [], parent: RowWriter? = nil) {
+    self.prefix = prefix
     self.parentWriter = parent
   }
   
@@ -59,39 +59,43 @@ public class RowWriter {
 }
 
 public struct RowEncoder<Key: CodingKey> {
-  let prefix: String
+  let prefix: [String]
   let writer: RowWriter
   
-  init(prefix: String = "", writer: RowWriter) {
+  init(prefix: [String] = [], writer: RowWriter) {
     self.prefix = prefix
     self.writer = writer
   }
   
+  private func variableName(forKey key: Key) -> String {
+    (prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")
+  }
+  
   public func callAsFunction<T>(_ value: T, forKey key: Key) throws where T: PostgresEncodable {
     writer.values.append(value)
-    writer.variableNames.append(prefix + key.stringValue)
+    writer.variableNames.append(variableName(forKey: key))
   }
   
   public func callAsFunction<T>(_ value: Optional<T>, forKey key: Key) throws where T: PostgresEncodable {
     if let value {
       writer.values.append(value)
-      writer.variableNames.append(prefix + key.stringValue)
+      writer.variableNames.append(variableName(forKey: key))
     }
   }
   
   public func callAsFunction<T>(_ value: T, forKey key: Key) throws where T: FieldSubset {
-    let subWriter = RowWriter(prefix: prefix + key.stringValue, parent: writer)
+    let subWriter = RowWriter(prefix: prefix + [key.stringValue], parent: writer)
     try value.encode(row: subWriter)
   }
   
   public func callAsFunction(_ value: Int8, forKey key: Key) throws {
     writer.values.append(Int(value))
-    writer.variableNames.append(prefix + key.stringValue)
+    writer.variableNames.append(variableName(forKey: key))
   }
   
   public func callAsFunction(_ value: Int8?, forKey key: Key) throws {
     if let value {
-      writer.variableNames.append(prefix + key.stringValue)
+      writer.variableNames.append(variableName(forKey: key))
       writer.values.append(Int(value))
     }
   }

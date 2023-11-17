@@ -76,7 +76,9 @@ public class Children<Child: TableObject>: Sequence, Codable {
   }
 }
 
-public class Parent<DAD: TableObject>: Codable, PostgresCodable {
+extension Parent: FieldSubset where  DAD.IDType == DAD.IDType._DecodableType {}
+
+public class Parent<DAD: TableObject>: Codable {
   public private(set) var id: DAD.IDType
   public private(set) var value: DAD?
     
@@ -116,9 +118,25 @@ public class Parent<DAD: TableObject>: Codable, PostgresCodable {
     }
     return value
   }
+  
+  public enum Columns: String, CodingKey {
+    case root = ""
+  }
+  
+  public required init(row: RowReader) throws {
+    let decode = row.decoder(keyedBy: Columns.self)
+    self.id = try decode(DAD.IDType.self, forKey: .root)
+  }
+  
+  public func encode(row: RowWriter) throws {
+    let encode = row.encoder(keyedBy: Columns.self)
+    try encode(id, forKey: .root)
+  }
 }
 
-public class OptionalParent<DAD: TableObject>: Codable, PostgresCodable {
+extension OptionalParent: FieldSubset where  DAD.IDType == DAD.IDType._DecodableType {}
+
+public class OptionalParent<DAD: TableObject>: Codable {
   public private(set) var id: DAD.IDType?
   public private(set) var value: DAD?
     
@@ -153,6 +171,20 @@ public class OptionalParent<DAD: TableObject>: Codable, PostgresCodable {
     }
     value = try await DAD.fetch(id: id, transaction: tid)
     return value
+  }
+  
+  public enum Columns: String, CodingKey {
+    case root = ""
+  }
+  
+  public required init(row: RowReader) throws where DAD.IDType == DAD.IDType._DecodableType {
+    let decode = row.decoder(keyedBy: Columns.self)
+    self.id = try decode(Optional<DAD.IDType>.self, forKey: .root)
+  }
+  
+  public func encode(row: RowWriter) throws {
+    let encode = row.encoder(keyedBy: Columns.self)
+    try encode(id, forKey: .root)
   }
 }
 
