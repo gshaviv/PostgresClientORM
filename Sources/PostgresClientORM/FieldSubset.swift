@@ -18,3 +18,24 @@ public extension FieldSubset {
     ColumnName(key.stringValue)
   }
 }
+
+extension Optional: FieldSubset where Wrapped: FieldSubset {
+  public init(row: RowReader) throws {
+    do {
+      self = try .some(Wrapped(row: row))
+    } catch {
+      self = .none
+    }
+  }
+
+  public func encode(row: RowWriter) throws {
+    switch self {
+    case .none:
+      break
+    case .some(let wrapped):
+      try wrapped.encode(row: row)
+    }
+  }
+
+  public typealias Columns = Wrapped.Columns
+}

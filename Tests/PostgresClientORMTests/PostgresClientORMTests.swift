@@ -3,6 +3,7 @@
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
+import PostgresNIO
 
 let testMacros: [String: Macro.Type] = [
     "Columns": CodingKeysMacro.self,
@@ -235,6 +236,10 @@ extension Test: PostgresCodable {
     XCTAssertTrue(Parent<Test>.self is any FieldSubset.Type)
     let dad = Parent<Test>(80)
     XCTAssertTrue(dad is any FieldSubset)
+    XCTAssertFalse(dad is any PostgresCodable)
+    let optionalDad: Parent<Test>? = Parent(90)
+    XCTAssertTrue(optionalDad is any FieldSubset)
+    XCTAssertFalse(optionalDad is any PostgresCodable)
   }
 }
 
