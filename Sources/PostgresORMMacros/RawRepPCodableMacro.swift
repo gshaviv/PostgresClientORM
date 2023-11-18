@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Guy Shaviv on 16/11/2023.
 //
@@ -17,12 +17,12 @@ struct RawRepPCodableMacro: ExtensionMacro {
                                providingExtensionsOf type: some TypeSyntaxProtocol,
                                conformingTo protocols: [TypeSyntax], in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax]
   {
-//    guard !protocols.isEmpty else {
-//      return []
-//    }
+    guard !node.description.contains("rawValue:") else {
+      return []
+    }
     guard let enumDecl = declaration.as(EnumDeclSyntax.self) else {
       context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "", diagnosticID: .arguments, severity: .error)))
+                             message: GeneratorDiagnostic(message: "Must be attached to an extension", diagnosticID: .arguments, severity: .error)))
       return []
     }
     guard let rawType = enumDecl.inheritanceClause?.inheritedTypes.as(InheritedTypeListSyntax.self)?.first?.type else {
@@ -30,7 +30,7 @@ struct RawRepPCodableMacro: ExtensionMacro {
                              message: GeneratorDiagnostic(message: "Missing raw value", diagnosticID: .arguments, severity: .error)))
       return []
     }
-   
+
     switch rawType.trimmedDescription {
     case "String", "Int", "UInt8", "Int16":
       break
@@ -38,36 +38,75 @@ struct RawRepPCodableMacro: ExtensionMacro {
       context.diagnose(.init(node: node,
                              message: GeneratorDiagnostic(message: "RawValue can only be ne of: String, Int, UInt8, Int16", diagnosticID: .arguments, severity: .error)))
       return []
-
     }
-    return [try ExtensionDeclSyntax("extension \(type.trimmed): PostgresCodable") {
+
+    return try [ExtensionDeclSyntax("extension \(type.trimmed): FieldSubset") {
       """
-      static var psqlType: PostgresDataType {
-        RawValue.psqlType
+      public enum Columns: String, CodingKey {
+        case root = ""
       }
-      """
-      """
-      static var psqlFormat: PostgresFormat {
-        RawValue.psqlFormat
+
+      public init(row: RowDecoder<Columns>) throws {
+        self.init(rawValue: try row.decode(\(raw: rawType).self, forKey: .root))
       }
-      """
-      """
-      @inlinable
-      func encode(into byteBuffer: inout ByteBuffer, context: PostgresEncodingContext<some PostgresJSONEncoder>) {
-        rawValue.encode(into: &byteBuffer, context: context)
-      }
-      """
-      """
-      @inlinable
-      init(from buffer: inout ByteBuffer, type: PostgresDataType, format: PostgresFormat, context: PostgresDecodingContext<some PostgresJSONDecoder>) throws {
-        let raw = try RawValue(from: &buffer, type: type, format: format, context: context)
-        if let value = Self(rawValue: raw) {
-          self = value
-        } else {
-          throw PostgresDecodingError.Code.typeMismatch
-        }
+
+      public func encode(row: RowEncoder<Columns>) throws {
+        try row.encode(rawValue, forKey: .root)
       }
       """
     }]
+  }
+}
+
+extension RawRepPCodableMacro: MemberMacro {
+  static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+    //    guard !protocols.isEmpty else {
+    //      return []
+    //    }
+    guard node.description.contains("rawValue:") else {
+      return []
+    }
+    guard let extensionDecl = declaration.as(ExtensionDeclSyntax.self) else {
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "Must be attached to an enum decleration", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
+    let args = extractArgs(from: node)
+    guard let rawType = args.parse("rawValue", using: { $0.description.components(separatedBy: ".").first }) else {
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "Missing raw value", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
+    guard extensionDecl.inheritanceClause?.inheritedTypes.as(InheritedTypeListSyntax.self)?.trimmedDescription.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespaces) }).contains(where: { $0 == "FieldSubset"}) == true else {
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "extension must be declared as conforming to FieldSubset", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
+
+    switch rawType {
+    case "String", "Int", "UInt8", "Int16":
+      break
+    default:
+      context.diagnose(.init(node: node,
+                             message: GeneratorDiagnostic(message: "RawValue can only be ne of: String, Int, UInt8, Int16", diagnosticID: .arguments, severity: .error)))
+      return []
+    }
+    return [
+      """
+      public enum Columns: String, CodingKey {
+        case root = ""
+      }
+      """,
+      """
+      public init(row: RowDecoder<Columns>) throws {
+        self.init(rawValue: try row.decode(\(raw: rawType).self, forKey: .root))
+      }
+      """,
+      """
+      public func encode(row: RowEncoder<Columns>) throws {
+        try row.encode(rawValue, forKey: .root)
+      }
+      """
+    ]
   }
 }

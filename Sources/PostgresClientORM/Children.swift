@@ -121,21 +121,16 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
     case root = ""
   }
   
-  public required init(row: RowReader) throws {
-    let decode = row.decoder(keyedBy: Columns.self)
-    self.id = try decode(DAD.IDType.self, forKey: .root)
+  public required init(row: RowDecoder<Columns>) throws {
+    self.id = try row.decode(DAD.IDType.self, forKey: .root)
   }
   
-  public func encode(row: RowWriter) throws {
-    let encode = row.encoder(keyedBy: Columns.self)
-    try encode(id, forKey: .root)
+  public func encode(row: RowEncoder<Columns>) throws {
+    try row.encode(id, forKey: .root)
   }
 }
 
 public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
-   
-  
-  
   public private(set) var id: DAD.IDType?
   public private(set) var value: DAD?
     
@@ -176,14 +171,12 @@ public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
     case root = ""
   }
   
-  public required init(row: RowReader) throws {
-    let decode = row.decoder(keyedBy: Columns.self)
-    self.id = try decode(DAD.IDType.self, forKey: .root)
+  public required init(row: RowDecoder<Columns>) throws {
+    self.id = try row.decode(DAD.IDType.self, forKey: .root)
   }
   
-  public func encode(row: RowWriter) throws {
-    let encode = row.encoder(keyedBy: Columns.self)
-    try encode(id, forKey: .root)
+  public func encode(row: RowEncoder<Columns>) throws {
+    try row.encode(id, forKey: .root)
   }
 }
 

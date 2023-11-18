@@ -9,8 +9,8 @@ import Foundation
 
 public protocol FieldSubset {
   associatedtype Columns: CodingKey
-  init(row: RowReader) throws
-  func encode(row: RowWriter) throws
+  init(row: RowDecoder<Columns>) throws
+  func encode(row: RowEncoder<Columns>) throws
 }
 
 public extension FieldSubset {
@@ -20,7 +20,7 @@ public extension FieldSubset {
 }
 
 extension Optional: FieldSubset where Wrapped: FieldSubset {
-  public init(row: RowReader) throws {
+  public init(row: RowDecoder<Wrapped.Columns>) throws {
     do {
       self = try .some(Wrapped(row: row))
     } catch {
@@ -28,7 +28,7 @@ extension Optional: FieldSubset where Wrapped: FieldSubset {
     }
   }
 
-  public func encode(row: RowWriter) throws {
+  public func encode(row: RowEncoder<Wrapped.Columns>) throws {
     switch self {
     case .none:
       break

@@ -39,10 +39,15 @@ public macro CodingKeysIgnored() = #externalMacro(module: "PostgresORMMacros", t
 
 @attached(extension,
           names:
-          named(psqlType),
-          named(psqlFormat),
-          named(encode(into:context:)),
-          named(init(from:type:format:context:)),
-          conformances:
-          PostgresCodable)
-public macro PostgresCodable() = #externalMacro(module: "PostgresORMMacros", type: "RawRepPCodableMacro")
+          named(Columns),
+          named(init(row:)),
+          named(encode(row:)),
+          conformances: FieldSubset)
+public macro RawField() = #externalMacro(module: "PostgresORMMacros", type: "RawRepPCodableMacro")
+
+@attached(member,
+          names:
+          named(Columns),
+          named(init(row:)),
+          named(encode(row:)))
+public macro RawField(rowValue: Any.Type) = #externalMacro(module: "PostgresORMMacros", type: "RawRepPCodableMacro")

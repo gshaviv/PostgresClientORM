@@ -25,7 +25,7 @@ public struct RowReader {
   }
   
   public func decode<T: FieldSubset>(_ type: T.Type) throws -> T {
-    try T(row: self)
+    try T(row: self.decoder(keyedBy: T.Columns.self))
   }
   
   public func decoder<Key>(keyedBy: Key.Type) -> RowDecoder<Key> where Key: CodingKey {
@@ -42,11 +42,11 @@ public struct RowDecoder<Key: CodingKey> {
     self.prefix = prefix
   }
   
-  public func callAsFunction<T>(_ type: T.Type, forKey key: Key) throws -> T where T: PostgresDecodable {
+  public func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: PostgresDecodable {
     try row[path: prefix, key].decode(type)
   }
   
-  public func callAsFunction<T>(_ type: T.Type, forKey key: Key) throws -> T where T: FieldSubset {
+  public func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: FieldSubset {
     let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
     return try reader.decode(type)
   }
@@ -55,44 +55,44 @@ public struct RowDecoder<Key: CodingKey> {
     row.contains(path: prefix, key: key)
   }
   
-  public func callAsFunction(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
+  public func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
     try Int8(row[path: prefix, key].decode(Int.self))
   }
   
-  public func callAsFunction(_ type: UInt.Type, forKey key: Key) throws -> UInt {
+  public func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
     try UInt(row[path: prefix, key].decode(Int.self))
   }
   
-  public func callAsFunction(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
+  public func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
     try UInt16(row[path: prefix, key].decode(Int.self))
   }
   
-  public func callAsFunction(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
+  public func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
     try UInt32(row[path: prefix, key].decode(Int.self))
   }
   
-  public func callAsFunction(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
+  public func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
     try UInt64(row[path: prefix, key].decode(Int64.self))
   }
   
-  public func callAsFunction(_ type: Int8?.Type, forKey key: Key) throws -> Int8? {
-    try? self(Int8.self, forKey: key)
+  public func decode(_ type: Int8?.Type, forKey key: Key) throws -> Int8? {
+    try? decode(Int8.self, forKey: key)
   }
   
-  public func callAsFunction(_ type: UInt?.Type, forKey key: Key) throws -> UInt? {
-    try? self(UInt.self, forKey: key)
+  public func decode(_ type: UInt?.Type, forKey key: Key) throws -> UInt? {
+    try? decode(UInt.self, forKey: key)
   }
   
-  public func callAsFunction(_ type: UInt16?.Type, forKey key: Key) throws -> UInt16? {
-    try? self(UInt16.self, forKey: key)
+  public func decode(_ type: UInt16?.Type, forKey key: Key) throws -> UInt16? {
+    try? decode(UInt16.self, forKey: key)
   }
   
-  public func callAsFunction(_ type: UInt32?.Type, forKey key: Key) throws -> UInt32? {
-    try? self(UInt32.self, forKey: key)
+  public func decode(_ type: UInt32?.Type, forKey key: Key) throws -> UInt32? {
+    try? decode(UInt32.self, forKey: key)
   }
   
-  public func callAsFunction(_ type: UInt64?.Type, forKey key: Key) throws -> UInt64? {
-    try? self(UInt64.self, forKey: key)
+  public func decode(_ type: UInt64?.Type, forKey key: Key) throws -> UInt64? {
+    try? decode(UInt64.self, forKey: key)
   }
 }
 

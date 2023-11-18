@@ -11,7 +11,7 @@ public enum CodingKeyType: String {
   case none = ".none"
 }
 
-private func extractArgs(from node: AttributeSyntax) -> [String: ExprSyntax] {
+func extractArgs(from node: AttributeSyntax) -> [String: ExprSyntax] {
   guard case let .argumentList(arguments) = node.arguments else {
     return [:]
   }
@@ -262,26 +262,24 @@ public struct CodingKeysMacro: MemberMacro {
       } + (customId != nil ? [(TokenSyntax(stringLiteral: "id"), TypeSyntax(stringLiteral: idType))] : [])
 
     var initRowDecl = ["""
-    init(row: RowReader) throws {
-    let decode = row.decoder(keyedBy: Columns.self)
+    init(row: RowDecoder<Columns>) throws {
     """]
 
     var encodeRowDecl = ["""
-    func encode(row: RowWriter) throws {
-    let encode = row.encoder(keyedBy: Columns.self)
+    func encode(row: RowEncoder<Columns>) throws {
     """]
 
     for (name, type) in members {
       let cleanName = name.description.trimmingCharacters(in: CharacterSet(charactersIn: "` "))
       if type.description != "Children" {
-        encodeRowDecl.append("try encode(self.\(cleanName), forKey: .\(cleanName))")
+        encodeRowDecl.append("try row.encode(self.\(cleanName), forKey: .\(cleanName))")
       }
 
       if type.description != "Children" {
         if name.trimmed.description == "id", isStruct {
-          initRowDecl.append("self._idHolder.value = try decode(\(type).self, forKey: .\(cleanName))")
+          initRowDecl.append("self._idHolder.value = try row.decode(\(type).self, forKey: .\(cleanName))")
         } else {
-          initRowDecl.append("self.\(cleanName) = try decode(\(type.trimmed).self, forKey: .\(cleanName))")
+          initRowDecl.append("self.\(cleanName) = try row.decode(\(type.trimmed).self, forKey: .\(cleanName))")
         }
       }
     }

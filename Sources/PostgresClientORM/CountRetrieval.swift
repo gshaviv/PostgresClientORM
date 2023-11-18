@@ -10,9 +10,8 @@ import PostgresNIO
 
 public struct CountRetrieval: TableObject {
   public static var idColumn: ColumnName { column(.count) }
-  public typealias Columns = CodingKeys
 
-  public enum CodingKeys: String, CodingKey {
+  public enum Columns: String, CodingKey {
     case count
   }
 
@@ -24,14 +23,12 @@ public struct CountRetrieval: TableObject {
   var count: Int
   public static let tableName = ""
   
-  public init(row: RowReader) throws {
-    let decode = row.decoder(keyedBy: CodingKeys.self)
-    self.count = try decode(Int.self, forKey: .count)
+  public init(row: RowDecoder<Columns>) throws {
+    self.count = try row.decode(Int.self, forKey: .count)
   }
   
-  public func encode(row: RowWriter) throws {
-    let encode = row.encoder(keyedBy: CodingKeys.self)
-    try encode(self.count, forKey: .count)
+  public func encode(row: RowEncoder<Columns>) throws {
+    try row.encode(self.count, forKey: .count)
   }
 }
 

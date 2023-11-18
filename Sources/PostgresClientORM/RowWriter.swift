@@ -32,7 +32,7 @@ public class RowWriter {
   }
   
   public func encode<T: TableObject>(_ value: T, as queryType: RowWriter.QueryType) throws -> Query<T> {
-    try value.encode(row: self)
+    try value.encode(row: encoder(keyedBy: T.Columns.self))
     switch queryType {
     case .insert:
       let sql = "INSERT INTO \(T.tableName) (\(variableNames.map { ColumnName(stringLiteral: $0).description }.joined(separator: ","))) VALUES (\((1 ... values.count).map { "$\($0)" }.joined(separator: ",")))"
@@ -71,29 +71,29 @@ public struct RowEncoder<Key: CodingKey> {
     (prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")
   }
   
-  public func callAsFunction<T>(_ value: T, forKey key: Key) throws where T: PostgresEncodable {
+  public func encode<T>(_ value: T, forKey key: Key) throws where T: PostgresEncodable {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
   
-  public func callAsFunction<T>(_ value: Optional<T>, forKey key: Key) throws where T: PostgresEncodable {
+  public func encode<T>(_ value: Optional<T>, forKey key: Key) throws where T: PostgresEncodable {
     if let value {
       writer.values.append(value)
       writer.variableNames.append(variableName(forKey: key))
     }
   }
   
-  public func callAsFunction<T>(_ value: T, forKey key: Key) throws where T: FieldSubset {
+  public func encode<T>(_ value: T, forKey key: Key) throws where T: FieldSubset {
     let subWriter = RowWriter(prefix: prefix + [key.stringValue], parent: writer)
-    try value.encode(row: subWriter)
+    try value.encode(row: subWriter.encoder(keyedBy: T.Columns.self))
   }
   
-  public func callAsFunction(_ value: Int8, forKey key: Key) throws {
+  public func encode(_ value: Int8, forKey key: Key) throws {
     writer.values.append(Int(value))
     writer.variableNames.append(variableName(forKey: key))
   }
   
-  public func callAsFunction(_ value: Int8?, forKey key: Key) throws {
+  public func encode(_ value: Int8?, forKey key: Key) throws {
     if let value {
       writer.variableNames.append(variableName(forKey: key))
       writer.values.append(Int(value))

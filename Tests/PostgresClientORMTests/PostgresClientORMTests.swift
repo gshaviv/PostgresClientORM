@@ -11,6 +11,7 @@ let testMacros: [String: Macro.Type] = [
     "ColumnIgnored": CodingKeyIgnoredMacro.self,
     "TableObject": TablePersistMacro.self,
     "PostgresCodable": RawRepPCodableMacro.self,
+    "RawField": RawRepPCodableMacro.self,
 ]
 
 final class CodingKeysGeneratorTests: XCTestCase {
@@ -192,9 +193,9 @@ struct Entity {
     XCTAssertEqual("\(ColumnName("col") == NULL)", "col IS NULL", "Failed")
   }
   
-  func testPostgresCodableMacros() {
+  func testRawFieldEnum() {
       let source = """
-@PostgresCodable
+@RawField
 enum Test: String, Codable {
   case one
   case two
@@ -207,27 +208,43 @@ enum Test: String, Codable {
   case two
 }
 
-extension Test: PostgresCodable {
-    static var psqlType: PostgresDataType {
-      RawValue.psqlType
+extension Test: FieldSubset {
+    public enum Columns: String, CodingKey {
+      case root = ""
     }
-    static var psqlFormat: PostgresFormat {
-      RawValue.psqlFormat
+
+    public init(row: RowDecoder<Columns>) throws {
+      self.init(rawValue: try row.decode(String.self, forKey: .root))
     }
-    @inlinable
-    func encode(into byteBuffer: inout ByteBuffer, context: PostgresEncodingContext<some PostgresJSONEncoder>) {
-      rawValue.encode(into: &byteBuffer, context: context)
-    }
-    @inlinable
-    init(from buffer: inout ByteBuffer, type: PostgresDataType, format: PostgresFormat, context: PostgresDecodingContext<some PostgresJSONDecoder>) throws {
-      let raw = try RawValue(from: &buffer, type: type, format: format, context: context)
-      if let value = Self (rawValue: raw) {
-        self = value
-      } else {
-        throw PostgresDecodingError.Code.typeMismatch
-      }
+
+    public func encode(row: RowEncoder<Columns>) throws {
+      try row.encode(rawValue, forKey: .root)
     }
 }
+"""
+      assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
+  }
+  
+  func testRawFieldExtension() {
+      let source = """
+@RawField(rawValue: String.self)
+extension Test: FieldSubset {}
+"""
+      let expected = """
+
+extension Test: FieldSubset {
+
+    public enum Columns: String, CodingKey {
+      case root = ""
+    }
+
+    public init(row: RowDecoder<Columns>) throws {
+      self.init(rawValue: try row.decode(String.self, forKey: .root))
+    }
+
+    public func encode(row: RowEncoder<Columns>) throws {
+      try row.encode(rawValue, forKey: .root)
+    }}
 """
       assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
