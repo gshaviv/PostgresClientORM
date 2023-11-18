@@ -76,6 +76,10 @@ public struct RowEncoder<Key: CodingKey> {
     writer.variableNames.append(variableName(forKey: key))
   }
   
+  public func encode<T>(_ value: T, forKey key: Key) throws where T: RawRepresentable, T.RawValue: PostgresEncodable {
+    try encode(value.rawValue, forKey: key)
+  }
+  
   public func encode<T>(_ value: Optional<T>, forKey key: Key) throws where T: PostgresEncodable {
     if let value {
       writer.values.append(value)

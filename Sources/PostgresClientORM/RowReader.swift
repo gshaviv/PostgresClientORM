@@ -42,11 +42,18 @@ public struct RowDecoder<Key: CodingKey> {
     self.prefix = prefix
   }
   
-  public func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: PostgresDecodable {
+  public func decode<T: PostgresDecodable>(_ type: T.Type, forKey key: Key) throws -> T {
     try row[path: prefix, key].decode(type)
   }
   
-  public func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: FieldSubset {
+  public func decode<T: RawRepresentable>(_ type: T.Type, forKey key: Key) throws -> T where T.RawValue: PostgresDecodable {
+    guard let value = T(rawValue: try decode(T.RawValue.self, forKey: key)) else {
+      throw PostgresDecodingError.Code.failure
+    }
+    return value
+  }
+  
+  public func decode<T: FieldSubset>(_ type: T.Type, forKey key: Key) throws -> T {
     let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
     return try reader.decode(type)
   }

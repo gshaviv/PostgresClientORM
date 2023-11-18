@@ -36,18 +36,3 @@ public macro ColumnIgnored() = #externalMacro(module: "PostgresORMMacros", type:
 
 @attached(peer)
 public macro CodingKeysIgnored() = #externalMacro(module: "PostgresORMMacros", type: "CodingKeyIgnoredMacro")
-
-@attached(extension,
-          names:
-          named(Columns),
-          named(init(row:)),
-          named(encode(row:)),
-          conformances: FieldSubset)
-public macro RawField() = #externalMacro(module: "PostgresORMMacros", type: "RawRepPCodableMacro")
-
-@attached(member,
-          names:
-          named(Columns),
-          named(init(row:)),
-          named(encode(row:)))
-public macro RawField(rowValue: Any.Type) = #externalMacro(module: "PostgresORMMacros", type: "RawRepPCodableMacro")

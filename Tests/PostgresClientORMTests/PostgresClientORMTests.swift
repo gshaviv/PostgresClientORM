@@ -11,7 +11,6 @@ let testMacros: [String: Macro.Type] = [
     "ColumnIgnored": CodingKeyIgnoredMacro.self,
     "TableObject": TablePersistMacro.self,
     "PostgresCodable": RawRepPCodableMacro.self,
-    "RawField": RawRepPCodableMacro.self,
 ]
 
 final class CodingKeysGeneratorTests: XCTestCase {
@@ -191,62 +190,6 @@ struct Entity {
   
   func testNilWhere() throws {
     XCTAssertEqual("\(ColumnName("col") == NULL)", "col IS NULL", "Failed")
-  }
-  
-  func testRawFieldEnum() {
-      let source = """
-@RawField
-enum Test: String, Codable {
-  case one
-  case two
-}
-"""
-      let expected = """
-
-enum Test: String, Codable {
-  case one
-  case two
-}
-
-extension Test: FieldSubset {
-    public enum Columns: String, CodingKey {
-      case root = ""
-    }
-
-    public init(row: RowDecoder<Columns>) throws {
-      self.init(rawValue: try row.decode(String.self, forKey: .root))
-    }
-
-    public func encode(row: RowEncoder<Columns>) throws {
-      try row.encode(rawValue, forKey: .root)
-    }
-}
-"""
-      assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
-  }
-  
-  func testRawFieldExtension() {
-      let source = """
-@RawField(rawValue: String.self)
-extension Test: FieldSubset {}
-"""
-      let expected = """
-
-extension Test: FieldSubset {
-
-    public enum Columns: String, CodingKey {
-      case root = ""
-    }
-
-    public init(row: RowDecoder<Columns>) throws {
-      self.init(rawValue: try row.decode(String.self, forKey: .root))
-    }
-
-    public func encode(row: RowEncoder<Columns>) throws {
-      try row.encode(rawValue, forKey: .root)
-    }}
-"""
-      assertMacroExpansion(source, expandedSource: expected, macros: testMacros)
   }
   
   func testParentIsFieldsubset() {
