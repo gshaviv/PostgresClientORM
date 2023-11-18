@@ -1,19 +1,19 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Guy Shaviv on 30/10/2023.
 //
 
 import Foundation
-import PostgresNIO
 import Logging
+import PostgresNIO
 
 public enum PostgresClientORM {
-  public static var logger: Logger = Logger(label: "Postgres")
-  public static var eventLoop: EventLoop = PostgresConnection.defaultEventLoopGroup.any()
-  
-  public static func use(logger: Logger, eventLoop: EventLoop) {
+  public static var logger: Logger = .init(label: "Postgres")
+  public static var eventLoop = PostgresConnection.defaultEventLoopGroup.any()
+
+  public static func use(logger: Logger = Logger(label: "Postgres"), eventLoop: EventLoop = PostgresConnection.defaultEventLoopGroup.any()) {
     Self.logger = logger
     Self.eventLoop = eventLoop
   }
@@ -21,7 +21,7 @@ public enum PostgresClientORM {
 
 actor ConnectionGroup {
   static var shared = ConnectionGroup()
-  
+
   private init() {}
 
   private static var configuration: PostgresConnection.Configuration {
@@ -29,12 +29,12 @@ actor ConnectionGroup {
       if let url = ProcessInfo.processInfo.environment["DATABASE_URL"] {
         return try PostgresConnection.Configuration(url: url)
       } else {
-        return PostgresConnection.Configuration(host: ProcessInfo.processInfo.environment["DATABASE_HOST"] ?? "localhost" /* "host.docker.internal"*/,
-                                                port: Int( ProcessInfo.processInfo.environment["DATABASE_PORT"] ?? "5432") ?? 5432,
-                                                username: ProcessInfo.processInfo.environment["DATABASE_USER"] ?? "user",
-                                                password: ProcessInfo.processInfo.environment["DATABASE_PASSWROD"] ?? "shh...",
-                                                database: ProcessInfo.processInfo.environment["DATABASE_NAME"] ?? "db",
-                                                tls: Bool( ProcessInfo.processInfo.environment["DATABASE_SSL"] ?? "false") ?? false ? .require(try NIOSSLContext(configuration: TLSConfiguration.makeClientConfiguration())) : .disable)
+        return try PostgresConnection.Configuration(host: ProcessInfo.processInfo.environment["DATABASE_HOST"] ?? "localhost" /* "host.docker.internal"*/,
+                                                    port: Int(ProcessInfo.processInfo.environment["DATABASE_PORT"] ?? "5432") ?? 5432,
+                                                    username: ProcessInfo.processInfo.environment["DATABASE_USER"] ?? "user",
+                                                    password: ProcessInfo.processInfo.environment["DATABASE_PASSWROD"] ?? "shh...",
+                                                    database: ProcessInfo.processInfo.environment["DATABASE_NAME"] ?? "db",
+                                                    tls: Bool(ProcessInfo.processInfo.environment["DATABASE_SSL"] ?? "false") ?? false ? .require(NIOSSLContext(configuration: TLSConfiguration.makeClientConfiguration())) : .disable)
       }
     }
   }
@@ -99,7 +99,7 @@ extension PostgresConnection.Configuration {
     if components.queryItems?.filter({ $0.name.lowercased() == "sslmode" }).first?.value == "disable" {
       ssl = .disable
     } else {
-      ssl = .require(try NIOSSLContext(configuration: TLSConfiguration.makeClientConfiguration()))
+      ssl = try .require(NIOSSLContext(configuration: TLSConfiguration.makeClientConfiguration()))
     }
     let port = components.port ?? 5432
     self.init(host: host, port: port, username: user, password: password, database: db, tls: ssl)
