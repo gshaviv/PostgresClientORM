@@ -172,7 +172,11 @@ public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
   }
   
   public required init(row: RowDecoder<Columns>) throws {
-    self.id = try row.decode(DAD.IDType.self, forKey: .root)
+    do {
+      self.id = try row.decode(DAD.IDType.self, forKey: .root)
+    } catch {
+      self.id = nil
+    }
   }
   
   public func encode(row: RowEncoder<Columns>) throws {
