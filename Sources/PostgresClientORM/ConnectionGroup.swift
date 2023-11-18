@@ -13,7 +13,7 @@ public enum PostgresClientORM {
   public static var logger: Logger = .init(label: "Postgres")
   public static var eventLoop = PostgresConnection.defaultEventLoopGroup.any()
 
-  public static func use(logger: Logger = Logger(label: "Postgres"), eventLoop: EventLoop = PostgresConnection.defaultEventLoopGroup.any()) {
+  public static func configure(logger: Logger = Logger(label: "Postgres"), eventLoop: EventLoop = PostgresConnection.defaultEventLoopGroup.any()) {
     Self.logger = logger
     Self.eventLoop = eventLoop
   }
