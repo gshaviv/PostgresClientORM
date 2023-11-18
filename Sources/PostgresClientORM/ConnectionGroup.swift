@@ -10,16 +10,12 @@ import PostgresNIO
 import Logging
 
 public enum PostgresClientORM {
-  public static var logger: Logger?
+  public static var logger: Logger = Logger(label: "Postgres")
+  public static var eventLoop: EventLoop = PostgresConnection.defaultEventLoopGroup.any()
   
-  internal static var useLogger: Logger {
-    if let logger {
-      return logger
-    } else {
-      let newLogger = Logger(label: "Postgres")
-      logger = newLogger
-      return newLogger
-    }
+  public static func use(logger: Logger, eventLoop: EventLoop) {
+    Self.logger = logger
+    Self.eventLoop = eventLoop
   }
 }
 
@@ -51,7 +47,7 @@ actor ConnectionGroup {
       guard all.count < 24 else {
         throw TableObjectError.general("Too Many pending connections")
       }
-      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.useLogger)
+      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.logger)
       all.append(connection)
       return connection
     } else {
