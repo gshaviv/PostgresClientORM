@@ -158,7 +158,7 @@ public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
   
   @discardableResult public func get(transaction tid: UUID? = nil) async throws -> DAD? {
     guard id != nil else {
-      throw TableObjectError.general("Trying to get parent with nil id")
+      return nil
     }
     if let value {
       return value
