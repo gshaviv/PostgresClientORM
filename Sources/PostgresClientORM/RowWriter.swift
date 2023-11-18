@@ -71,16 +71,22 @@ public struct RowEncoder<Key: CodingKey> {
     (prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")
   }
   
-  public func encode<T>(_ value: T, forKey key: Key) throws where T: PostgresEncodable {
+  public func encode<T: PostgresEncodable>(_ value: T, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
   
-  public func encode<T>(_ value: T, forKey key: Key) throws where T: RawRepresentable, T.RawValue: PostgresEncodable {
+  public func encode<T: RawRepresentable>(_ value: T, forKey key: Key) throws where T.RawValue: PostgresEncodable {
     try encode(value.rawValue, forKey: key)
   }
   
-  public func encode<T>(_ value: Optional<T>, forKey key: Key) throws where T: PostgresEncodable {
+  public func encode<T: RawRepresentable>(_ value: T?, forKey key: Key) throws where T.RawValue: PostgresEncodable {
+    if let value {
+      try encode(value.rawValue, forKey: key)
+    }
+  }
+  
+  public func encode<T: PostgresEncodable>(_ value: Optional<T>, forKey key: Key) throws {
     if let value {
       writer.values.append(value)
       writer.variableNames.append(variableName(forKey: key))
