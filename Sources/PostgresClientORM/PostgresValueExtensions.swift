@@ -8,4 +8,5 @@
 import Foundation
 import PostgresNIO
 
+/// SQL NULL constant
 public let NULL = Optional<Bool>.none

@@ -32,7 +32,7 @@ public enum PostgresClientORM {
 
 /// A connection group.
 ///
-/// For multi threaded access you would need a connectin per thread. The ``ConnectionGroup`` lets you obtain a connection, use it, and return it when done. No need to directly access this class unless doing transaction as ``Database.handler`` already accesses it for you.
+/// For multi threaded access you would need a connectin per thread. The ``ConnectionGroup`` lets you obtain a connection, use it, and return it when done. No need to directly access this class  as ``Database.handler`` already accesses it for you.
 ///
 /// The ``ConnectionGroup`` configures the connection based on the environment variables. It will first try to see if the variable **DATABASE_URL** is defined and if so will use it. It will use an ssl connection unless the URL includes the option `?sslmode=disable`. Next
 /// it will use the environemnt variables:
