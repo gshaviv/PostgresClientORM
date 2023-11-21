@@ -7,6 +7,9 @@
 
 import Foundation
 
+/// A result builder to build arrays of type T
+///
+/// You can define a block to be an arry builder by annotating it with *@ArrayBuilder<Type>* and then the block will be a DSL whose return value is an array of *Type* each live of the block is a *Type* constructor or logical statement.
 @resultBuilder
 public enum ArrayBuilder<T> {
   public static func buildEither(first component: [T]) -> [T] {
