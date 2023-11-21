@@ -8,14 +8,52 @@
 import Foundation
 import PostgresNIO
 
+/// A property that is a one-to-many relation
+///
+/// Setup the relationship on the parent side (the one in the relation) specifying the type of the children (must be``TableObject`` convorming), the column name in the child type, and optionally specify a sorting order for the children
+/// This relation doesn't add any column to the parent, only to the child.
+///
+/// ```swift
+///  let planets = Children(ofType: Planet.self, by: .star, sortBy: Planet.column(,name), order: .ascending) // the sortBy and order arguments are optional
+///  ```
+///
+///  You need to first load the children before attempting to access them, e.g.:
+///  ```swift
+///  try await star.loadChildren(\.planets)
+///  ```
+///  and you can then access the values by one of:
+///  ```swift
+///  for planet in planets {
+///  ...
+///  }
+///  ```
+///  or
+///  ```swift
+///  let thePlantes = planets.values
+///  ```
+///  or
+///  ```swift
+///  for idx in 0 ..< planets.count {
+///         let aPlanet = planets[idx]
+///                    ...
+///   }
+///   ```
 public class Children<Child: TableObject>: Sequence, Codable {
   public typealias AsyncIterator = Children<Child>
   public typealias Element = Child
+  /// The column on the child that is referencing self
   public let referencingColumn: Child.Columns
+  /// The [Child] array that was loaded, nil if not loaded yet
   public private(set) var loadedValues: [Child]?
   let sortKey: ColumnName?
   let sortDir: Query<Child>.OrderBy
   
+  /// Init a one-to-many relationship
+  /// - Parameters:
+  ///   - childType: The type of the child
+  ///   - childCol: The column in the child that references self (with value equql self.id)
+  ///   - sortBy: Optional - sort order for the children
+  ///   - order: Optional: sort direction for the children, i.e. .ascending or .descending (default = .ascending)
   public init(ofType childType: Child.Type, by childCol: Child.Columns, sortBy: ColumnName? = nil, order: Query<Child>.OrderBy = .ascending) {
     self.referencingColumn = childCol
     self.sortKey = sortBy
@@ -34,10 +72,12 @@ public class Children<Child: TableObject>: Sequence, Codable {
     try container.encode(values)
   }
   
+  /// The values (objects) loaded or an empty array if not loaded yet
   public var values: [Child] {
     loadedValues ?? []
   }
   
+  /// Has the values been loaded yet?
   public var isLoaded: Bool {
     loadedValues != nil
   }
@@ -46,6 +86,13 @@ public class Children<Child: TableObject>: Sequence, Codable {
     values[idx]
   }
   
+  /// load the children
+  /// - Parameters:
+  ///   - parentId: The id of the parent (self)
+  ///   - id: transaction id if participating in a transaction
+  ///
+  ///   - See Also:
+  ///    ``TableObect.loadChildren(_:)``
   public func load(parentId: any PostgresCodable, transaction id: UUID? = nil) async throws {
     var query = try Child.select()
       .where {
@@ -60,12 +107,16 @@ public class Children<Child: TableObject>: Sequence, Codable {
       .execute(transaction: id)
   }
   
+  /// The number of objects loaded, or zero if not loaded yet
   public var count: Int { values.count }
   
+  /// Unload all objects, need to be followed by a load before accessing again the values
   public func reset() {
     loadedValues = nil
   }
   
+  /// Reload children
+  /// - Parameter parentId: id of self
   public func reload(parentId: any PostgresCodable) async throws {
     reset()
     try await load(parentId: parentId)
@@ -147,17 +198,16 @@ public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
     }
   }
     
-  init() {
-  }
+  init() {}
   
   @discardableResult public func set(id: DAD.IDType?) -> Self {
-    self._id = id
+    _id = id
     return self
   }
   
   @discardableResult public func set(value: DAD?) -> Self {
-    self._value = value
-    self._id = value?.id
+    _value = value
+    _id = value?.id
     return self
   }
   
@@ -202,6 +252,11 @@ public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
 }
 
 public extension TableObject {
+  /// load children
+  /// - Parameters:
+  ///   - keypath: keypath of property of type ``Children``
+  ///   - transaction: id of transaction if in a transaction
+  /// - Returns: the objects loaded, equal to va;ues
   @discardableResult func loadChildren<ChildType>(_ keypath: KeyPath<Self, Children<ChildType>>, transaction: UUID? = nil) async throws -> [ChildType] {
     guard let id else {
       throw TableObjectError.general("id is nil")
