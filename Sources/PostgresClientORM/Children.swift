@@ -127,6 +127,12 @@ public class Children<Child: TableObject>: Sequence, Codable {
   }
 }
 
+/// A x-to-one rlation
+///
+/// if the other end of the relation has a ``Children`` property this is a one-to-many relation. A Parent cannot be optional, i.e. it must have an id. For types that have an optional parent, set the parent itself to be optional, e.g.
+/// ```swift
+/// let p: Parent<Planet>?
+/// ```
 public class Parent<DAD: TableObject>: Codable, FieldSubset {
   public private(set) var id: DAD.IDType
   public private(set) var value: DAD?
@@ -157,6 +163,14 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
   
   public var type: DAD.Type { DAD.self }
   
+  /// Load the parent object
+  ///
+  /// Fetches the parent from the database.
+  ///
+  /// - Note: If the parent is already loaded in memory, this will not create a reference to it, but load another copy of it.
+  ///
+  /// - Parameter tid: transaction id if part of a transaction
+  /// - Returns: the parent object
   @discardableResult public func get(transaction tid: UUID? = nil) async throws -> DAD {
     if let value {
       return value
@@ -178,76 +192,6 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
   
   public func encode(row: RowEncoder<Columns>) throws {
     try row.encode(id, forKey: .root)
-  }
-}
-
-public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
-  private var _id: DAD.IDType?
-  private var _value: DAD?
-  
-  public var id: DAD.IDType? {
-    get { _id }
-    set { _id = newValue }
-  }
-  
-  public var value: DAD? {
-    get { _value }
-    set {
-      _value = newValue
-      _id = newValue?.id
-    }
-  }
-    
-  public init() {}
-  
-  @discardableResult public func set(id: DAD.IDType?) -> Self {
-    _id = id
-    return self
-  }
-  
-  @discardableResult public func set(value: DAD?) -> Self {
-    _value = value
-    _id = value?.id
-    return self
-  }
-  
-  public required init(from decoder: Decoder) throws {
-    let container = try decoder.singleValueContainer()
-    self._id = try container.decode(DAD.IDType.self)
-  }
-  
-  public func encode(to encoder: Encoder) throws {
-    var container = encoder.singleValueContainer()
-    try container.encode(_id)
-  }
-  
-  public var type: DAD.Type { DAD.self }
-  
-  @discardableResult public func get(transaction tid: UUID? = nil) async throws -> DAD? {
-    guard _id != nil else {
-      return nil
-    }
-    if let _value {
-      return _value
-    }
-    _value = try await DAD.fetch(id: _id, transaction: tid)
-    return _value
-  }
-  
-  public enum Columns: String, CodingKey {
-    case root = ""
-  }
-  
-  public required init(row: RowDecoder<Columns>) throws {
-    do {
-      self._id = try row.decode(DAD.IDType.self, forKey: .root)
-    } catch {
-      self._id = nil
-    }
-  }
-  
-  public func encode(row: RowEncoder<Columns>) throws {
-    try row.encode(_id, forKey: .root)
   }
 }
 
