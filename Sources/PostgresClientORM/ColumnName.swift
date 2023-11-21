@@ -1,19 +1,27 @@
-//
-//  File.swift
-//
-//
-//  Created by Guy Shaviv on 30/10/2023.
-//
 
 import Foundation
 
-public struct ColumnName:  LosslessStringConvertible {
+/// A column name for queries or where clauses.
+///
+/// A column name can be created from a string, e.g.
+/// ```swift
+/// let x: ColumnName = "name"
+/// ```
+/// or
+/// ```swift
+/// let x = ColumnName("name")
+/// ```
+/// To create a column name of a ``FieldSubset`` use ``-›`` operator (- and opt-shift-4)
+/// ```swift
+/// "loc" -› "lat" = 34 // equivalent to column loc_lat
+/// ```
+public struct ColumnName: LosslessStringConvertible {
   public var name: String
-  internal let fromLiteral: Bool
+  let fromLiteral: Bool
   public var description: String {
-    CharacterSet.lowercaseLetters.isSuperset(of: CharacterSet(charactersIn: name)) ? name : "\"\(name)\""
+    "\"\(name)\""
   }
-  
+
   public init(stringLiteral value: String) {
     name = value
     fromLiteral = true
