@@ -198,7 +198,7 @@ public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
     }
   }
     
-  init() {}
+  public init() {}
   
   @discardableResult public func set(id: DAD.IDType?) -> Self {
     _id = id
