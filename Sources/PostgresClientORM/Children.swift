@@ -131,40 +131,57 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
 }
 
 public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
-  public private(set) var id: DAD.IDType?
-  public private(set) var value: DAD?
-    
-  public init(_ id: DAD.IDType?) {
-    self.id = id
-    self.value = nil
+  private var _id: DAD.IDType?
+  private var _value: DAD?
+  
+  public var id: DAD.IDType? {
+    get { _id }
+    set { _id = newValue }
   }
   
-  public init(_ value: DAD?) {
-    self.value = value
-    self.id = value?.id
+  public var value: DAD? {
+    get { _value }
+    set {
+      _value = newValue
+      _id = newValue?.id
+    }
+  }
+    
+  init() {
+  }
+  
+  @discardableResult public func set(id: DAD.IDType?) -> Self {
+    self._id = id
+    return self
+  }
+  
+  @discardableResult public func set(value: DAD?) -> Self {
+    self._value = value
+    self._id = value?.id
+    return self
   }
   
   public required init(from decoder: Decoder) throws {
     let container = try decoder.singleValueContainer()
-    self.id = try container.decode(DAD.IDType.self)
+    self._id = try container.decode(DAD.IDType.self)
   }
   
   public func encode(to encoder: Encoder) throws {
     var container = encoder.singleValueContainer()
-    try container.encode(id)
+    try container.encode(_id)
   }
   
   public var type: DAD.Type { DAD.self }
   
   @discardableResult public func get(transaction tid: UUID? = nil) async throws -> DAD? {
-    guard id != nil else {
+    guard _id != nil else {
       return nil
     }
-    if let value {
-      return value
+    if let _value {
+      return _value
     }
-    value = try await DAD.fetch(id: id, transaction: tid)
-    return value
+    _value = try await DAD.fetch(id: _id, transaction: tid)
+    return _value
   }
   
   public enum Columns: String, CodingKey {
@@ -173,14 +190,14 @@ public class OptionalParent<DAD: TableObject>: Codable, FieldSubset {
   
   public required init(row: RowDecoder<Columns>) throws {
     do {
-      self.id = try row.decode(DAD.IDType.self, forKey: .root)
+      self._id = try row.decode(DAD.IDType.self, forKey: .root)
     } catch {
-      self.id = nil
+      self._id = nil
     }
   }
   
   public func encode(row: RowEncoder<Columns>) throws {
-    try row.encode(id, forKey: .root)
+    try row.encode(_id, forKey: .root)
   }
 }
 
