@@ -52,6 +52,25 @@ public actor Database {
     }
   }
 
+  public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, transaction: UUID? = nil) async throws -> RET {
+    if let activeTransaction, activeTransaction.id != transaction {
+      try await activeTransaction.task.value
+    }
+
+    let connection = try await ConnectionGroup.shared.obtain()
+    do {
+      let rows = try await connection.query(sqlQuery.postgresQuery, logger: connection.logger)
+      var iterator = rows.makeAsyncIterator()
+      guard let row = try await iterator.next() else {
+        throw TableObjectError.general("No return value")
+      }
+      return try row.decode(RET.self)
+    } catch {
+      ConnectionGroup.shared.release(connection: connection)
+      throw error
+    }
+  }
+
   public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transaction id: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != id {
       try await activeTransaction.task.value
