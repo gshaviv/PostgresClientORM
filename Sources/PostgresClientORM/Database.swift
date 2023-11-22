@@ -8,7 +8,11 @@
 import Foundation
 import PostgresNIO
 
+/// The actor handling the database.
+///
+/// The database is configured via environement variables. **DATABASE_URL** if exsts is referred to first, otherwide the set of: **DATABASE_HOST**, **DATABASE_PORT** (defaut: 5432), **DATABASE_USER**, **DATABASE_PASSWORD**, **DATABASE_NAME** and **DATABASE_SSL** (default: true)
 public actor Database {
+  /// The shared Database handler instance
   public static let handler = Database()
   private var activeTransaction: (task: Task<Void, Error>, id: UUID)?
 
@@ -30,7 +34,12 @@ public actor Database {
     }
     throw TableObjectError.general("no count")
   }
-
+  
+  /// Execute a ``Query``
+  /// - Parameters:
+  ///   - sqlQuery: the ``Query`` to execute
+  ///   - transaction: if part of transaction, the transaction id (optional)
+  /// - Returns: and array of results, TYPE is deried from the ``Query``
   public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transaction: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != transaction {
       try await activeTransaction.task.value
@@ -51,7 +60,13 @@ public actor Database {
       throw error
     }
   }
-
+  
+  /// Execute a ``Query`` with a RETURNING clause
+  /// - Parameters:
+  ///   - sqlQuery: the Query
+  ///   - returning: The type being returned
+  ///   - transaction: optional: if part of a transaction, it's id.
+  /// - Returns: an instance of return type
   public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, transaction: UUID? = nil) async throws -> RET {
     if let activeTransaction, activeTransaction.id != transaction {
       try await activeTransaction.task.value
@@ -70,7 +85,13 @@ public actor Database {
       throw error
     }
   }
-
+  
+  /// Execute sql text, returning an array of results
+  /// - Parameters:
+  ///   - decode: The type of result to return
+  ///   - sqlText: the text of the sql query to perform
+  ///   - id: (Optional) transaction id if participating in a transaction)
+  /// - Returns: an array of TYPE
   public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transaction id: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != id {
       try await activeTransaction.task.value
@@ -101,7 +122,11 @@ public actor Database {
       throw error
     }
   }
-
+  
+  /// Execute an sql text with no return value
+  /// - Parameters:
+  ///   - sqlText: The SQL text to run
+  ///   - id: (optional) transaction id
   public func execute(_ sqlText: String, transaction id: UUID? = nil) async throws {
     if let activeTransaction, activeTransaction.id != id {
       try await activeTransaction.task.value
@@ -113,7 +138,10 @@ public actor Database {
 
     try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
   }
-
+  
+  /// Perform database operations in a transaction
+  /// - Parameter transactionBlock: The transaction block receives a transaction id parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
+  /// - NOTE: **Important** remeber to include the transaction ID in database operations in the block, not doing so will cause a dead lock.
   public func transaction(_ transactionBlock: @escaping (_ transactionId: UUID) async throws -> Void) async throws {
     if let activeTransaction {
       try await activeTransaction.task.value
