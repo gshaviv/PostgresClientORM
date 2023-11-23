@@ -237,16 +237,16 @@ public struct TableDefinition {
     }
   }
   
-  public func create(_ transaction: UUID) async throws {
-    try await Database.handler.execute(sql(operation: .create), transaction: transaction)
+  public func create() async throws {
+    try await Database.handler.execute(sql(operation: .create))
   }
   
-  public func update(_ transaction: UUID) async throws {
-    try await Database.handler.execute(sql(operation: .alter), transaction: transaction)
+  public func update() async throws {
+    try await Database.handler.execute(sql(operation: .alter))
   }
   
-  public func drop(_ transaction: UUID) async throws {
-    try await Database.handler.execute(sql(operation: .drop), transaction: transaction)
+  public func drop() async throws {
+    try await Database.handler.execute(sql(operation: .drop))
   }
 }
 
