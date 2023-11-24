@@ -9,8 +9,6 @@ import Foundation
 import PostgresNIO
 
 public class RowWriter {
-  public var codingPath: [CodingKey] = []
-  public var userInfo: [CodingUserInfoKey: Any] = [:]
   fileprivate var variableNames = [String]()
   fileprivate var values = [PostgresEncodable?]()
   private let prefix: [String]
@@ -21,16 +19,25 @@ public class RowWriter {
     self.parentWriter = parent
   }
   
+  /// QueryType to encode
   public enum QueryType {
+    /// An insert query
     case insert
+    /// an SQL update query
     case update
+    /// An update query containing only specific columns
     case updateColumns([ColumnName])
   }
   
-  public func encoder<Key>(keyedBy tape: Key.Type) -> RowEncoder<Key> where Key: CodingKey {
+  func encoder<Key>(keyedBy tape: Key.Type) -> RowEncoder<Key> where Key: CodingKey {
     RowEncoder(prefix: prefix, writer: parentWriter ?? self)
   }
   
+  /// Create a base query of type from instance
+  /// - Parameters:
+  ///   - value: the ``TableObject`` instance to encode
+  ///   - queryType: type of query: .insert / .update or .updateColumns([ColumnList])
+  /// - Returns: A Query for said instance of said type, need to add to it a where clause to define its scope.
   public func encode<T: TableObject>(_ value: T, as queryType: RowWriter.QueryType) throws -> Query<T> {
     try value.encode(row: encoder(keyedBy: T.Columns.self))
     switch queryType {
@@ -50,7 +57,7 @@ public class RowWriter {
         if let idIdx = variableNames.firstIndex(where: { $0 == col.name }) {
           variableNames.remove(at: idIdx)
           values.remove(at: idIdx)
-        }     
+        }
       }
       let sql = "UPDATE \(T.tableName) SET \(variableNames.map { ColumnName(stringLiteral: $0).description }.enumerated().map { "\($0.element) = $\($0.offset + 1)" }.joined(separator: ","))"
       return try Query(sql: sql, variables: values)
@@ -59,8 +66,8 @@ public class RowWriter {
 }
 
 public struct RowEncoder<Key: CodingKey> {
-  let prefix: [String]
-  let writer: RowWriter
+  private let prefix: [String]
+  private let writer: RowWriter
   
   init(prefix: [String] = [], writer: RowWriter) {
     self.prefix = prefix
@@ -71,7 +78,7 @@ public struct RowEncoder<Key: CodingKey> {
     (prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")
   }
   
-  public func encode<T: PostgresEncodable>(_ value: T, forKey key: Key) throws {
+  public func encode(_ value: some PostgresEncodable, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
@@ -86,7 +93,7 @@ public struct RowEncoder<Key: CodingKey> {
     }
   }
   
-  public func encode<T: PostgresEncodable>(_ value: Optional<T>, forKey key: Key) throws {
+  public func encode(_ value: (some PostgresEncodable)?, forKey key: Key) throws {
     if let value {
       writer.values.append(value)
       writer.variableNames.append(variableName(forKey: key))
@@ -110,4 +117,3 @@ public struct RowEncoder<Key: CodingKey> {
     }
   }
 }
-

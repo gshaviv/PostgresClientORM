@@ -108,11 +108,19 @@ public enum TableObjectError: Error, LocalizedError {
   }
 }
 
+/// A type that can track it's dirty status
+///
+/// Types automatically conform to this protocol if track their direty said, i.e. if they were modified after being loaded from the database.
 public protocol TrackingDirty {
+  @_documentation(visibility: private)
   var dbHash: Int? { get nonmutating set }
 }
 
 public extension TrackingDirty where Self: TableObject {
+  /// Save the receiver
+  /// - Parameter transaction: optional: transaction id
+  ///
+  /// If the receiver is not dirty this method does nothing. If it is dirty it wil update the database record for the instance. If this is a new object that was never read from the database, this method will insert it.
   nonmutating func save(transaction: UUID? = nil) async throws {
     if id == nil || dbHash == nil {
       try await insert(transaction: transaction)
@@ -120,7 +128,13 @@ public extension TrackingDirty where Self: TableObject {
       try await update(transaction: transaction)
     }
   }
-
+  
+  /// Is instance dirty?
+  ///
+  /// An instance is dirty if it was modified in memroy after being read from the database.
+  /// - Note: The framework does not check if the object was modifed in the database after being read, only if it was modified in process.
+  ///
+  /// - Returns: Bool indicating dirty status
   nonmutating func isDirty() throws -> Bool {
     try dbHash != calculcateDbHash()
   }

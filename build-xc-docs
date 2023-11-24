@@ -1,5 +1,6 @@
 #!/bin/sh
 
+rm -rf PostgresClientORM.doccarchive
 swift package --build-path ./.docs generate-documentation --target PostgresClientORM
 mv /Users/guy/Git/PostgresClientORM/.docs/plugins/Swift-DocC/outputs/PostgresClientORM.doccarchive .
 rm -rf .docs
