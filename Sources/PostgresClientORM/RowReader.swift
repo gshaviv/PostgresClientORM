@@ -8,11 +8,9 @@
 import Foundation
 import PostgresNIO
 
-public struct RowReader {
-  var codingPath: [CodingKey] = []
-  var userInfo: [CodingUserInfoKey: Any] = [:]
-  let prefix: [String]
-  let row: PostgresRandomAccessRow
+struct RowReader {
+  private let prefix: [String]
+  private let row: PostgresRandomAccessRow
   
   init(row: PostgresRow) {
     self.row = PostgresRandomAccessRow(row)
@@ -24,15 +22,19 @@ public struct RowReader {
     self.prefix = prefix
   }
   
+  /// Decocde an instance of given type
+  /// - Parameter type: the type to decoce
+  /// - Returns: An instance of type
   public func decode<T: FieldSubset>(_ type: T.Type) throws -> T {
     try T(row: self.decoder(keyedBy: T.Columns.self))
   }
   
-  public func decoder<Key>(keyedBy: Key.Type) -> RowDecoder<Key> where Key: CodingKey {
+  func decoder<Key>(keyedBy: Key.Type) -> RowDecoder<Key> where Key: CodingKey {
     RowDecoder(prefix: prefix, row: row)
   }
 }
 
+/// A row decoder keywe by a Column type
 public struct RowDecoder<Key: CodingKey> {
   let prefix: [String]
   let row: PostgresRandomAccessRow

@@ -8,6 +8,7 @@
 import Foundation
 import PostgresNIO
 
+@_documentation(visibility: private)
 public struct CountRetrieval: TableObject {
   public static var idColumn: ColumnName { column(.count) }
 

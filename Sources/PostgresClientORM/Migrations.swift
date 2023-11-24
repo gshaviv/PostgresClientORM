@@ -7,13 +7,53 @@
 
 import Foundation
 
+/// Perform database migrations
+///
+/// Create an instance of the Migrations class, add the various migrations steps with the ``add`` function which receives a string with the migration step name and a block to execute. Finally call the ``perform`` func to perform the migrations.
+/// The class will create a `_migrations` table if one does not exist to track which migrations were executed alrready and starts executing the migration steps in the order they were added starting from the first step that wasn't executed yet. `.update(:)` the arugment being the new column type
+///
+/// Example:
+///  ```Swift
+///    func migrate() async throws {
+///          let migrations = Migrations()
+///
+///          migrations.add("v1") {
+///            try await table("t1") {
+///                column("id", type: .uuid).primaryKey()
+///                column("count", type: .int).notNull()
+///            }
+///            .create()
+///          }
+///
+///          migrations.add("v2") {
+///            try await table("t1") {
+///                 column("count").drop()
+///                 column("name, type: .string)
+///            }
+///            .update()
+///          }
+///
+///          try await migrations.perform()
+///    }
+///  ```
+///
+///  The modifiers that can be applied on a table are: `.create()`, `.drop()` and `.update()`.
+///
+///  The modifiers that can be applied on a column in a table are: `.primaryKey()`, `.notNull()`, `.defaultValue(:)` (with the default value given as the SQL string for that value,  `rename(:)` the argument being the new column name, `.unique()` sets a unique contraint on the column, `references(table:column:onDelete)` make the column a foreign key to specified column in specified talbe. the onDelete argument is what to do on delete (e.g. cascade, or not allow, etc)
+///
+/// - Note: The best practice is to use strings for the table and column names in the migrations which wil make them work also in case the entity they represent was modified or deleted.
 public class Migrations {
   private var steps: [(String, () async throws -> Void)] = []
   
+  /// Add a migrations step
+  /// - Parameters:
+  ///   - name: name os step
+  ///   - block: block to execute for this step
   public func add(_ name: String, block: @escaping () async throws -> Void) {
     steps.append((name, block))
   }
   
+  /// Perfrom all the migration steps that weren't executed yet.
   public func perform() async throws {
     try await Database.handler.execute("""
     CREATE TABLE IF NOT EXISTS _Migrations (
@@ -37,7 +77,7 @@ public class Migrations {
 }
 
 @TableObject(columns: .camelCase, table: "_Migrations", idType: String.self, trackDirty: false)
-struct PerformedMigration: Hashable {
+internal struct PerformedMigration: Hashable {
   static func == (lhs: PerformedMigration, rhs: PerformedMigration) -> Bool {
     lhs.id == rhs.id
   }
@@ -50,23 +90,36 @@ struct PerformedMigration: Hashable {
   init() {}
 }
 
+/// Postgres Column type
 public enum ColumnType: String {
+  /// Swift Int
   case int = "int4"
+  /// Swift It64
   case int64 = "int8"
+  /// Siwft Int16
   case int16 = "int2"
-  case int8 = "int1"
+  /// Swift Float
   case float = "float4"
+  /// Swift Double
   case double = "float8"
+  /// Swift Bool
   case bool
+  /// Swift String
   case string = "text"
+  /// Codable type encoded as json
   case codable = "jsonb"
+  /// Date
   case date
+  /// UUID
   case uuid
+  @_documentation(visibility: private)
   case unknwon = ""
   
+  /// Swift Int32, equeals Swift Int
   public static var int32 = ColumnType.int
 }
 
+@_documentation(visibility: private)
 public struct ColumnDefinitation {
   var name: String
   var type: ColumnType
@@ -176,6 +229,7 @@ public struct ColumnDefinitation {
   }
 }
 
+@_documentation(visibility: private)
 public struct TableDefinition {
   let name: String
   public enum Operation {
@@ -250,10 +304,12 @@ public struct TableDefinition {
   }
 }
 
+@_documentation(visibility: private)
 public func column(_ name: String, type: ColumnType = .unknwon) -> ColumnDefinitation {
   ColumnDefinitation(name: name, type: type)
 }
 
+@_documentation(visibility: private)
 public func table(_ name: String, @ArrayBuilder<ColumnDefinitation> columns: () throws -> [ColumnDefinitation] = { [] }) rethrows -> TableDefinition {
   try TableDefinition(name: name, columns: columns())
 }

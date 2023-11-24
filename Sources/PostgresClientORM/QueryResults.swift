@@ -8,6 +8,7 @@
 import Foundation
 import PostgresNIO
 
+@_documentation(visibility: private)
 public struct QueryResults<Type: FieldSubset>: AsyncSequence {
   public typealias AsyncIterator = QueryResultIterator<Type>
   public typealias Element = Type
@@ -22,6 +23,7 @@ public struct QueryResults<Type: FieldSubset>: AsyncSequence {
   }
 }
 
+@_documentation(visibility: private)
 public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
   private var query: PostgresQuery
   private var connection: PostgresConnection?

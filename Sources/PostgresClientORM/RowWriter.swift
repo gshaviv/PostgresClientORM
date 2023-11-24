@@ -8,7 +8,7 @@
 import Foundation
 import PostgresNIO
 
-public class RowWriter {
+class RowWriter {
   fileprivate var variableNames = [String]()
   fileprivate var values = [PostgresEncodable?]()
   private let prefix: [String]
@@ -65,6 +65,7 @@ public class RowWriter {
   }
 }
 
+/// A row encoder keyed by a Columns type
 public struct RowEncoder<Key: CodingKey> {
   private let prefix: [String]
   private let writer: RowWriter
