@@ -1,0 +1,8 @@
+#!/bin/sh
+
+swift package --allow-writing-to-directory "$PWD/docs" \
+    generate-documentation --target PostgresClientORM \
+    --disable-indexing \
+    --transform-for-static-hosting \
+    --hosting-base-path postgresclientorm \
+    --output-path "$PWD/docs"
