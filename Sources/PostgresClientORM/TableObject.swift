@@ -118,7 +118,7 @@ public protocol TrackingDirty {
 
 public extension TrackingDirty where Self: TableObject {
   /// Save the receiver
-  /// - Parameter transaction: optional: transaction id
+  /// - Parameter transactionConnection: optional: transaction connection
   ///
   /// If the receiver is not dirty this method does nothing. If it is dirty it wil update the database record for the instance. If this is a new object that was never read from the database, this method will insert it.
   nonmutating func save(transactionConnection: PostgresConnection? = nil) async throws {

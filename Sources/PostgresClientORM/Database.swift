@@ -41,7 +41,7 @@ public actor Database {
   /// Execute a ``Query``
   /// - Parameters:
   ///   - sqlQuery: the ``Query`` to execute
-  ///   - transaction: if part of transaction, the transaction id (optional)
+  ///   - transactionConnection: if part of transaction, the transaction connection (optional)
   /// - Returns: and array of results, TYPE is deried from the ``Query``
   public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
     let connection: PostgresConnection
@@ -100,7 +100,7 @@ public actor Database {
   /// - Parameters:
   ///   - decode: The type of result to return
   ///   - sqlText: the text of the sql query to perform
-  ///   - id: (Optional) transaction id if participating in a transaction)
+  ///   - transactionConnection: (Optional)  if participating in a transaction)
   /// - Returns: an array of TYPE
   public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
     let connection: PostgresConnection
@@ -160,7 +160,7 @@ public actor Database {
   }
   
   /// Perform database operations in a transaction
-  /// - Parameter transactionBlock: The transaction block receives a transaction id parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
+  /// - Parameter transactionBlock: The transaction block receives a transactionConnection parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
   /// - NOTE: **Important** remeber to include the transaction connection to the  database operations in the block, not doing so will cause the action to be performed outside the transaction.
   public func transaction(file: String = #file, line: Int = #line, _ transactionBlock: @escaping (_ connecction: PostgresConnection) async throws -> Void) async throws {
     let connection = try await ConnectionGroup.shared.obtain()

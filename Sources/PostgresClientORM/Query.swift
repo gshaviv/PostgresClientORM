@@ -128,7 +128,7 @@ public struct Query<TYPE: FieldSubset> {
   }
   
   /// Execute query
-  /// - Parameter transaction: transaction id if part of a transaction
+  /// - Parameter transactionConnection: if part of a transaction
   /// - Returns: an array of results
   @discardableResult public func execute(transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
     try await Database.handler.execute(sqlQuery: self, transactionConnection:  transactionConnection)

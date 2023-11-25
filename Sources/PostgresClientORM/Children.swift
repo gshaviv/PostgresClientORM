@@ -89,7 +89,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
   /// load the children
   /// - Parameters:
   ///   - parentId: The id of the parent (self)
-  ///   - id: transaction id if participating in a transaction
+  ///   - transactionConnection: if participating in a transaction
   ///
   ///   - See Also:
   ///    ``TableObect.loadChildren(_:)``
@@ -169,7 +169,7 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
   ///
   /// - Note: If the parent is already loaded in memory, this will not create a reference to it, but load another copy of it.
   ///
-  /// - Parameter tid: transaction id if part of a transaction
+  /// - Parameter transactionConnection: if part of a transaction
   /// - Returns: the parent object
   @discardableResult public func get(transactionConnection: PostgresConnection? = nil) async throws -> DAD {
     if let value {

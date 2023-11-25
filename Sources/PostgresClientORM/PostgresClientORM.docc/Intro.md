@@ -169,11 +169,11 @@ It is possible to perform database operations in a database transaction. To perf
 ```swift
 try await Database.handler.transaction { tid in
     // perform transaction operations
-    // remember to pass transaction id to any database operation
-    var city = try await Weather.fetch(id: city_id, transaction: tid)
+    // remember to pass transaction connection to any database operation
+    var city = try await Weather.fetch(id: city_id, transactionConnection: tid)
     city.temp.lo = -10
-    try await city.save(transaction: tid)
+    try await city.save(transactionConnection: tid)
 }
 ```
 
-Its important to pass the transaction Id to database operations in the block, otherwise the app will dead lock. The transaction will appear atomic to other users of the database. If the block terminates normally the transaction is commited. If the block throws the transaction is rolled back.
+Its important to pass the transaction connection to database operations in the block, otherwise the operation will not participate in the transacction. The transaction will appear atomic to other users of the database. If the block terminates normally the transaction is commited. If the block throws the transaction is rolled back.
