@@ -416,12 +416,12 @@ public struct CodingKeysMacro: MemberMacro {
 
     var initCodableDecl = ["""
     init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: Columns.self)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
     """]
 
     var encodeCodableDecl = ["""
     func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: Columns.self)
+    var container = encoder.container(keyedBy: CodingKeys.self)
     """]
 
     for (name, type) in codingMembers {
