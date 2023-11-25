@@ -53,7 +53,7 @@ public actor Database {
     
     do {
       var items = [TYPE]()
-      let results = sqlQuery.results
+      let results = sqlQuery.results(transactionConnection: connection)
       for try await item in results {
         items.append(item)
       }

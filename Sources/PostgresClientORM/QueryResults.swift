@@ -36,23 +36,23 @@ public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
   init(query: PostgresQuery, connection: PostgresConnection?) {
     self.query = query
     self.connection = connection
-    releaseConnectin = connection != nil
+    releaseConnectin = connection == nil
   }
 
   public mutating func next() async throws -> T? {
     if iterator == nil {
+      let resultConnection: PostgresConnection
       if let connection {
-        let result = try await connection.query(query, logger: connection.logger)
-        self.result = result
-        iterator = result.makeAsyncIterator()
+        resultConnection = connection
       } else {
-        let connection = try await ConnectionGroup.shared.obtain()
-        self.connection = connection
-        let result = try await connection.query(query, logger: connection.logger)
-        self.result = result
-        iterator = result.makeAsyncIterator()
+        resultConnection = try await ConnectionGroup.shared.obtain()
+        self.connection = resultConnection
       }
+      let result = try await resultConnection.query(query, logger: resultConnection.logger)
+      self.result = result
+      iterator = result.makeAsyncIterator()
     }
+    
     guard let row = try await iterator?.next() else {
       if let connection, releaseConnectin {
         ConnectionGroup.shared.release(connection: connection)
