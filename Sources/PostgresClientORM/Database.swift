@@ -22,7 +22,8 @@ public actor Database {
     if let activeTransaction, activeTransaction.id != transaction {
       PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) waiting on transaction to finish")
       try await activeTransaction.task.value
-    }
+      PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) resuming")
+   }
 
     let connection = try await ConnectionGroup.shared.obtain()
     defer {
@@ -45,6 +46,7 @@ public actor Database {
     if let activeTransaction, activeTransaction.id != transaction {
       PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) waiting on transaction to finish")
       try await activeTransaction.task.value
+      PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) resuming")
     }
 
     let connection = try await ConnectionGroup.shared.obtain()
@@ -73,6 +75,7 @@ public actor Database {
     if let activeTransaction, activeTransaction.id != transaction {
       PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) waiting on transaction to finish")
       try await activeTransaction.task.value
+      PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) resuming")
     }
 
     let connection = try await ConnectionGroup.shared.obtain()
@@ -99,6 +102,7 @@ public actor Database {
     if let activeTransaction, activeTransaction.id != id {
       PostgresClientORM.logger.info("SQL text \(sqlText) waiting on transaction to finish")
       try await activeTransaction.task.value
+      PostgresClientORM.logger.info("SQL text \(sqlText) resuming")
     }
 
     let connection = try await ConnectionGroup.shared.obtain()
@@ -135,6 +139,7 @@ public actor Database {
     if let activeTransaction, activeTransaction.id != id {
       PostgresClientORM.logger.info("SQL text \(sqlText) waiting on transaction to finish")
       try await activeTransaction.task.value
+      PostgresClientORM.logger.info("SQL text \(sqlText) resuming")
     }
     let connection = try await ConnectionGroup.shared.obtain()
     defer {
@@ -151,6 +156,7 @@ public actor Database {
     if let activeTransaction {
       PostgresClientORM.logger.info("Waiting on previous transaction.")
       try await activeTransaction.task.value
+      PostgresClientORM.logger.info("New transaction starting.")
     }
 
     let connection = try await ConnectionGroup.shared.obtain()
