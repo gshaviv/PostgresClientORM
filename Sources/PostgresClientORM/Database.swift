@@ -169,8 +169,11 @@ public actor Database {
 
       try await activeTransaction?.task.value
       ConnectionGroup.shared.release(connection: connection)
+      self.activeTransaction = nil
     } catch {
+      try await connection.rollbackTransaction()
       ConnectionGroup.shared.release(connection: connection)
+      self.activeTransaction = nil
       throw error
     }
   }
