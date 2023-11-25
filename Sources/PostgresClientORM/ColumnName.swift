@@ -35,6 +35,11 @@ public struct ColumnName: LosslessStringConvertible {
 
 infix operator -›: MultiplicationPrecedence
 
+/// Column name of a column in a ``FieldSubset`` property
 public func -› (lhs: ColumnName, rhs: ColumnName) -> ColumnName {
-  ColumnName("\(lhs)_\(rhs)")
+  if rhs.name.isEmpty {
+    return lhs
+  } else {
+    return ColumnName("\(lhs.name)_\(rhs.name)")
+  }
 }
