@@ -20,6 +20,7 @@ public actor Database {
 
   func getCount(sqlQuery: Query<CountRetrieval>, transaction: UUID? = nil) async throws -> Int {
     if let activeTransaction, activeTransaction.id != transaction {
+      PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) waiting on transaction to finish")
       try await activeTransaction.task.value
     }
 
@@ -42,6 +43,7 @@ public actor Database {
   /// - Returns: and array of results, TYPE is deried from the ``Query``
   public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transaction: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != transaction {
+      PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) waiting on transaction to finish")
       try await activeTransaction.task.value
     }
 
@@ -69,6 +71,7 @@ public actor Database {
   /// - Returns: an instance of return type
   public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, transaction: UUID? = nil) async throws -> RET {
     if let activeTransaction, activeTransaction.id != transaction {
+      PostgresClientORM.logger.info("SQL query \(sqlQuery.postgresQuery) waiting on transaction to finish")
       try await activeTransaction.task.value
     }
 
@@ -94,6 +97,7 @@ public actor Database {
   /// - Returns: an array of TYPE
   public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transaction id: UUID? = nil) async throws -> [TYPE] {
     if let activeTransaction, activeTransaction.id != id {
+      PostgresClientORM.logger.info("SQL text \(sqlText) waiting on transaction to finish")
       try await activeTransaction.task.value
     }
 
@@ -129,6 +133,7 @@ public actor Database {
   ///   - id: (optional) transaction id
   public func execute(_ sqlText: String, transaction id: UUID? = nil) async throws {
     if let activeTransaction, activeTransaction.id != id {
+      PostgresClientORM.logger.info("SQL text \(sqlText) waiting on transaction to finish")
       try await activeTransaction.task.value
     }
     let connection = try await ConnectionGroup.shared.obtain()
@@ -144,6 +149,7 @@ public actor Database {
   /// - NOTE: **Important** remeber to include the transaction ID in database operations in the block, not doing so will cause a dead lock.
   public func transaction(_ transactionBlock: @escaping (_ transactionId: UUID) async throws -> Void) async throws {
     if let activeTransaction {
+      PostgresClientORM.logger.info("Waiting on previous transaction.")
       try await activeTransaction.task.value
     }
 
