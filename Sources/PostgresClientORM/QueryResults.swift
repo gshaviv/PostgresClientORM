@@ -13,13 +13,15 @@ public struct QueryResults<Type: FieldSubset>: AsyncSequence {
   public typealias AsyncIterator = QueryResultIterator<Type>
   public typealias Element = Type
   private var query: Query<Type>
+  private var connection: PostgresConnection?
 
-  init(query: Query<Type>) {
+  init(query: Query<Type>, connection: PostgresConnection? = nil) {
     self.query = query
+    self.connection = connection
   }
 
   public func makeAsyncIterator() -> QueryResultIterator<Type> {
-    QueryResultIterator(query: query.postgresQuery)
+    QueryResultIterator(query: query.postgresQuery, connection: connection)
   }
 }
 
@@ -29,21 +31,30 @@ public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
   private var connection: PostgresConnection?
   private var result: PostgresRowSequence?
   private var iterator: PostgresRowSequence.AsyncIterator?
+  private var releaseConnectin: Bool
 
-  init(query: PostgresQuery) {
+  init(query: PostgresQuery, connection: PostgresConnection?) {
     self.query = query
+    self.connection = connection
+    releaseConnectin = connection != nil
   }
 
   public mutating func next() async throws -> T? {
     if iterator == nil {
-      let connection = try await ConnectionGroup.shared.obtain()
-      self.connection = connection
-      let result = try await connection.query(query, logger: connection.logger)
-      self.result = result
-      iterator = result.makeAsyncIterator()
+      if let connection {
+        let result = try await connection.query(query, logger: connection.logger)
+        self.result = result
+        iterator = result.makeAsyncIterator()
+      } else {
+        let connection = try await ConnectionGroup.shared.obtain()
+        self.connection = connection
+        let result = try await connection.query(query, logger: connection.logger)
+        self.result = result
+        iterator = result.makeAsyncIterator()
+      }
     }
     guard let row = try await iterator?.next() else {
-      if let connection {
+      if let connection, releaseConnectin {
         ConnectionGroup.shared.release(connection: connection)
       }
       return nil

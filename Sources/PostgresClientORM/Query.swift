@@ -130,8 +130,8 @@ public struct Query<TYPE: FieldSubset> {
   /// Execute query
   /// - Parameter transaction: transaction id if part of a transaction
   /// - Returns: an array of results
-  @discardableResult public func execute(transaction: UUID? = nil) async throws -> [TYPE] {
-    try await Database.handler.execute(sqlQuery: self, transaction: transaction)
+  @discardableResult public func execute(transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
+    try await Database.handler.execute(sqlQuery: self, transactionConnection:  transactionConnection)
   }
   
   /// Sequence of results
@@ -147,6 +147,10 @@ public struct Query<TYPE: FieldSubset> {
   ///  ```
   public var results: QueryResults<TYPE> {
     QueryResults(query: self)
+  }
+  
+  public func results(transactionConnection: PostgresConnection) -> QueryResults<TYPE> {
+    QueryResults(query: self, connection: transactionConnection)
   }
 }
 

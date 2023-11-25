@@ -20,12 +20,12 @@ public extension TableObject {
     Query(sql: "SELECT * FROM \(tableName)")
   }
 
-  func delete(transaction: UUID? = nil) async throws {
+  func delete(transactionConnection: PostgresConnection? = nil) async throws {
     _ = try await Query<Self>(sql: "DELETE FROM \(Self.tableName)")
       .where {
         Self.idColumn == id
       }
-      .execute(transaction: transaction)
+      .execute(transactionConnection: transactionConnection)
   }
 
   static func delete() -> Query<Self> {
@@ -36,28 +36,28 @@ public extension TableObject {
     Query(sql: "SELECT count(*) FROM \(tableName)")
   }
 
-  static func fetch(id: IDType?, transaction: UUID? = nil) async throws -> Self? {
+  static func fetch(id: IDType?, transactionConnection: PostgresConnection? = nil) async throws -> Self? {
     guard let id else {
       return nil
     }
     return try await select().where {
       idColumn == id
     }
-    .execute(transaction: transaction).first
+    .execute(transactionConnection: transactionConnection).first
   }
 
-  nonmutating func insert(transaction: UUID? = nil) async throws {
+  nonmutating func insert(transactionConnection: PostgresConnection? = nil) async throws {
     if let optionalid = id as? UUID?, optionalid == nil {
       id = UUID() as? IDType
     }
     let insertQuery = try RowWriter().encode(self, as: .insert)
-    _ = try await insertQuery.execute(transaction: transaction)
+    _ = try await insertQuery.execute(transactionConnection: transactionConnection)
     if let saveableSelf = self as? any SaveableTableObject {
       saveableSelf.dbHash = try saveableSelf.calculcateDbHash()
     }
   }
 
-  nonmutating func update(transaction: UUID? = nil) async throws {
+  nonmutating func update(transactionConnection: PostgresConnection? = nil) async throws {
     guard id != nil else {
       throw PostgresError.protocol("id is nil")
     }
@@ -69,20 +69,20 @@ public extension TableObject {
     let updateQuery = try RowWriter().encode(self, as: .update).where {
       Self.idColumn == id
     }
-    _ = try await updateQuery.execute(transaction: transaction)
+    _ = try await updateQuery.execute(transactionConnection: transactionConnection)
     if let saveableSelf = self as? any SaveableTableObject {
       saveableSelf.dbHash = try saveableSelf.calculcateDbHash()
     }
   }
 
-  nonmutating func updateColumns(_ columns: ColumnName..., transaction: UUID? = nil) async throws {
+  nonmutating func updateColumns(_ columns: ColumnName..., transactionConnection: PostgresConnection? = nil) async throws {
     guard id != nil else {
       throw PostgresError.protocol("id is nil")
     }
     let updateQuery = try RowWriter().encode(self, as: .updateColumns(columns)).where {
       Self.idColumn == id
     }
-    _ = try await updateQuery.execute(transaction: transaction)
+    _ = try await updateQuery.execute(transactionConnection: transactionConnection)
     if let saveableSelf = self as? any SaveableTableObject {
       saveableSelf.dbHash = try saveableSelf.calculcateDbHash()
     }
@@ -121,11 +121,11 @@ public extension TrackingDirty where Self: TableObject {
   /// - Parameter transaction: optional: transaction id
   ///
   /// If the receiver is not dirty this method does nothing. If it is dirty it wil update the database record for the instance. If this is a new object that was never read from the database, this method will insert it.
-  nonmutating func save(transaction: UUID? = nil) async throws {
+  nonmutating func save(transactionConnection: PostgresConnection? = nil) async throws {
     if id == nil || dbHash == nil {
-      try await insert(transaction: transaction)
+      try await insert(transactionConnection: transactionConnection)
     } else {
-      try await update(transaction: transaction)
+      try await update(transactionConnection: transactionConnection)
     }
   }
   

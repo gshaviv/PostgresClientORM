@@ -93,7 +93,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
   ///
   ///   - See Also:
   ///    ``TableObect.loadChildren(_:)``
-  public func load(parentId: any PostgresCodable, transaction id: UUID? = nil) async throws {
+  public func load(parentId: any PostgresCodable, transactionConnection: PostgresConnection? = nil) async throws {
     var query = try Child.select()
       .where {
         Child.column(self.referencingColumn) == parentId
@@ -104,7 +104,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
     }
     
     loadedValues = try await query
-      .execute(transaction: id)
+      .execute(transactionConnection: transactionConnection)
   }
   
   /// The number of objects loaded, or zero if not loaded yet
@@ -171,11 +171,11 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
   ///
   /// - Parameter tid: transaction id if part of a transaction
   /// - Returns: the parent object
-  @discardableResult public func get(transaction tid: UUID? = nil) async throws -> DAD {
+  @discardableResult public func get(transactionConnection: PostgresConnection? = nil) async throws -> DAD {
     if let value {
       return value
     }
-    value = try await DAD.fetch(id: id, transaction: tid)
+    value = try await DAD.fetch(id: id, transactionConnection: transactionConnection)
     guard let value else {
       throw TableObjectError.general("Missing parent of type \(type)")
     }
@@ -201,11 +201,11 @@ public extension TableObject {
   ///   - keypath: keypath of property of type ``Children``
   ///   - transaction: id of transaction if in a transaction
   /// - Returns: the objects loaded, equal to va;ues
-  @discardableResult func loadChildren<ChildType>(_ keypath: KeyPath<Self, Children<ChildType>>, transaction: UUID? = nil) async throws -> [ChildType] {
+  @discardableResult func loadChildren<ChildType>(_ keypath: KeyPath<Self, Children<ChildType>>, transactionConnection: PostgresConnection? = nil) async throws -> [ChildType] {
     guard let id else {
       throw TableObjectError.general("id is nil")
     }
-    try await self[keyPath: keypath].load(parentId: id, transaction: transaction)
+    try await self[keyPath: keypath].load(parentId: id, transactionConnection: transactionConnection)
     return self[keyPath: keypath].values
   }
 }
