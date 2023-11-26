@@ -363,8 +363,17 @@ public struct CodingKeysMacro: MemberMacro {
       ZeroOrMore(.whitespace)
       "Decoder"
     }
+    
+    let codingKeysRefex = Regex {
+      "CodingKeys"
+      ZeroOrMore(.whitespace)
+      ":"
+      ZeroOrMore(.any)
+      "CodingKey"
+    }
 
     let membersText = declaration.memberBlock.members.map(\.trimmed.description)
+    guard membersText.first(where: { $0.firstMatch(of: codingKeysRefex) != nil }) == nil else { return [] }
     let hasEncode = membersText.first(where: { $0.firstMatch(of: encodeRegex) != nil }) != nil
     let hasInitFrom = membersText.first(where: { $0.firstMatch(of: initRegex) != nil }) != nil
 

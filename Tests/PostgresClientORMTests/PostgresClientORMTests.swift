@@ -92,24 +92,22 @@ struct Entity {
         case id = "entity_id"
     }
 
-    init(row: RowReader) throws {
-        let decode = row.decoder(keyedBy: Columns.self)
-        self.galaxy = try decode(Parent<Galaxy>.self, forKey: .galaxy)
-        self.otherClass = try decode(Classic.self, forKey: .otherClass)
-        self.currentValue = try decode(Int.self, forKey: .currentValue)
-        self.count = try decode(Int.self, forKey: .count)
-        self.protocol = try decode(String.self, forKey: .protocol)
-        self._idHolder.value = try decode(String.self, forKey: .id)
+    init(row: RowDecoder<Columns>) throws {
+        self.galaxy = try row.decode(Parent<Galaxy>.self, forKey: .galaxy)
+        self.otherClass = try row.decode(Classic.self, forKey: .otherClass)
+        self.currentValue = try row.decode(Int.self, forKey: .currentValue)
+        self.count = try row.decode(Int.self, forKey: .count)
+        self.protocol = try row.decode(String.self, forKey: .protocol)
+        self._idHolder.value = try row.decode(String.self, forKey: .id)
     }
 
-    func encode(row: RowWriter) throws {
-        let encode = row.encoder(keyedBy: Columns.self)
-        try encode(self.galaxy, forKey: .galaxy)
-        try encode(self.otherClass, forKey: .otherClass)
-        try encode(self.currentValue, forKey: .currentValue)
-        try encode(self.count, forKey: .count)
-        try encode(self.protocol, forKey: .protocol)
-        try encode(self.id, forKey: .id)
+    func encode(row: RowEncoder<Columns>) throws {
+        try row.encode(self.galaxy, forKey: .galaxy)
+        try row.encode(self.otherClass, forKey: .otherClass)
+        try row.encode(self.currentValue, forKey: .currentValue)
+        try row.encode(self.count, forKey: .count)
+        try row.encode(self.protocol, forKey: .protocol)
+        try row.encode(self.id, forKey: .id)
     }
 
     enum CodingKeys: String, CodingKey {
@@ -124,7 +122,7 @@ struct Entity {
     }
 
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: Columns.self)
+        let container = try decoder.container(keyedBy: CodingKeys.self)
         self.galaxy = try container.decode(Parent<Galaxy>.self, forKey: .galaxy)
         self.otherClass = try container.decode(Classic.self, forKey: .otherClass)
         self.currentValue = try container.decode(Int.self, forKey: .currentValue)
@@ -135,7 +133,7 @@ struct Entity {
     }
 
     func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: Columns.self)
+        var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(self.planets.loadedValues, forKey: .planets)
         try container.encode(self.galaxy, forKey: .galaxy)
         try container.encode(self.otherClass, forKey: .otherClass)
