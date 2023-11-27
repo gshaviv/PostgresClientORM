@@ -41,6 +41,8 @@ import Foundation
 ///
 ///  The modifiers that can be applied on a column in a table are: `.primaryKey()`, `.notNull()`, `.defaultValue(:)` (with the default value given as the SQL string for that value,  `rename(:)` the argument being the new column name, `.unique()` sets a unique contraint on the column, `references(table:column:onDelete)` make the column a foreign key to specified column in specified talbe. the onDelete argument is what to do on delete (e.g. cascade, or not allow, etc)
 ///
+///  To make a column auto increment give it type `.serial` or `.int64serial` or `.int16serial`. You can make it also a primary key to make it an auto incremanteed primary key.
+///
 /// - Note: The best practice is to use strings for the table and column names in the migrations which wil make them work also in case the entity they represent was modified or deleted.
 public class Migrations {
   private var steps: [(String, () async throws -> Void)] = []
