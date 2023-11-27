@@ -112,11 +112,19 @@ public enum ColumnType: String {
   case date
   /// UUID
   case uuid
+  /// Auto incremented int
+  case serial
+  /// Auto incremented int64
+  case int64serial = "bigserial"
+  /// auto incremented int16
+  case int16serial = "smallserial"
   @_documentation(visibility: private)
   case unknwon = ""
   
   /// Swift Int32, equeals Swift Int
   public static var int32 = ColumnType.int
+  /// int32 auto increamnted
+  public static var int32serial = ColumnType.serial
 }
 
 @_documentation(visibility: private)

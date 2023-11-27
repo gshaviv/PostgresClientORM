@@ -51,7 +51,11 @@ public extension TableObject {
       id = UUID() as? IDType
     }
     let insertQuery = try RowWriter().encode(self, as: .insert)
-    _ = try await insertQuery.execute(transactionConnection: transactionConnection)
+    if id is (any AutoIncrementable)? {
+      id = try await Database.handler.execute(sqlQuery: insertQuery.returning(Self.idColumn), returning: IDType.self, transactionConnection: transactionConnection)
+    } else {
+      _ = try await insertQuery.execute(transactionConnection: transactionConnection)
+    }
     if let saveableSelf = self as? any SaveableTableObject {
       saveableSelf.dbHash = try saveableSelf.calculcateDbHash()
     }
@@ -141,3 +145,9 @@ public extension TrackingDirty where Self: TableObject {
 }
 
 public typealias SaveableTableObject = TableObject & TrackingDirty
+
+private protocol AutoIncrementable {}
+extension Int: AutoIncrementable {}
+extension Int16: AutoIncrementable {}
+extension Int32: AutoIncrementable {}
+extension Int64: AutoIncrementable {}

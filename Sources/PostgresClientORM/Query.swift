@@ -103,6 +103,14 @@ public struct Query<TYPE: FieldSubset> {
     Query(sql: self.sqlString + " LIMIT \(n)", binding: self.bindings)
   }
   
+  /// Returrn a column value on modified rows
+  /// - Note: This must be the last clause in the statement
+  /// - Parameter col: column name
+  /// - Returns: Query with returning clause
+  public func returning(_ col: ColumnName) -> Query<TYPE> {
+    Query(sql: self.sqlString + " RETURNING \(col)", binding: self.bindings)
+  }
+  
   /// Sort direction
   public enum OrderBy: String {
     /// sort direction ascending
