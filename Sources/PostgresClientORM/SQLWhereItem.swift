@@ -179,8 +179,12 @@ public func >= (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
   }
 }
 
-public func != (lhs: ColumnName, rhs: some PostgresEncodable) -> SQLWhereItem {
-  SQLWhereItem("\(lhs) <> $1", rhs)
+public func != (lhs: ColumnName, rhs: (some PostgresEncodable)?) -> SQLWhereItem {
+  if let rhs {
+    return SQLWhereItem("\(lhs) <> $1", rhs)
+  } else {
+    return SQLWhereItem("\(lhs) IS NOT NULL")
+  }
 }
 
 public func != (lhs: ColumnName, rhs: ColumnName) -> SQLWhereItem {
