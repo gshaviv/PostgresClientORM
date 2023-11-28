@@ -40,11 +40,7 @@ public struct TablePersistMacro: MemberMacro {
       return []
     }
     let idName = TokenSyntax(stringLiteral: args.parse("idName", using: { $0.description.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }) ?? "id")
-    guard let idType = args.parse("idType", using: { $0.description.components(separatedBy: ".").first }) else {
-      context.diagnose(.init(node: node,
-                             message: GeneratorDiagnostic(message: "missing idType", diagnosticID: .arguments, severity: .error)))
-      return []
-    }
+    let idType = args.parse("idType", using: { $0.description.components(separatedBy: ".").first }) ?? "UUID"
     let codingKeyType = args.parse("codable", using: { CodingKeyType(rawValue: $0.description) }) ?? .none
     let trackDirty = args.parse("trackDirty", using: { Bool($0.description) }) ?? true
 

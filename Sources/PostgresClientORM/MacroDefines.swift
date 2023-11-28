@@ -26,7 +26,7 @@ public macro Columns(_ type: KeyType = .snakeCase) = #externalMacro(module: "Pos
 ///     - codable: if .snakeCase or .camelCase will generate Codable implementation using the spacified value for the CodingKeys
 @attached(member, names: named(CodingKeys), named(init(from:)), named(encode(to:)), named(idColumn), named(id), named(Columns), named(_idHolder), named(dbHash), named(_dbHash), named(init(row:)), named(encode(row:)), named(tableName))
 @attached(extension, conformances: TableObject, Codable, TrackingDirty, FieldSubset)
-public macro TableObject(columns: KeyType = .snakeCase, table: String, idType: Any.Type, idName: String = "id", trackDirty: Bool = true, codable: CodingKeyType = .none) = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
+public macro TableObject(columns: KeyType = .snakeCase, table: String, idType: Any.Type = UUID.self, idName: String = "id", trackDirty: Bool = true, codable: CodingKeyType = .none) = #externalMacro(module: "PostgresORMMacros", type: "TablePersistMacro")
 
 /// Set a custom name for the column holding the property
 /// Example:
