@@ -41,7 +41,7 @@ Models can be a ``struct`` or a ``final class``. The macro makes the object conf
 |-----------|:-------:|-------------|
 | columns: | .snakeCase | ``.snakeCase`` or ``.camelCase``. Cpecifies how the column name is derived. |
 | table: | **required** | The name of the table holding these objects. |
-| idType: | **required** | The type of the id column, e.g. ``UUID.self`` |
+| idType: | UUID.self | The type of the id column, e.g. ``Int.self`` |
 | idName: | "id" | The name of the id column. The id property will alwas be `id` |
 | trackDirty: | true | `true` / `false` if to keep track if the object is dirty, i.e. changed since it was loaded from the database |
 | codable: | .none | Also make the object Codable, value can be `.none`/`.snakeCase`/`.camelCase` |

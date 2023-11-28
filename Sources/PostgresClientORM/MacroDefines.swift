@@ -1,5 +1,5 @@
 import PostgresNIO
-
+import Foundation
 public enum KeyType {
   case camelCase
   case snakeCase
