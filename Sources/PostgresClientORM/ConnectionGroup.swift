@@ -66,36 +66,34 @@ actor ConnectionGroup {
     }
   }
 
-//  var all: [PostgresConnection] = []
-//  var available: [PostgresConnection] = []
-  var serial = 0
+  var all: [PostgresConnection] = []
+  var available: [PostgresConnection] = []
+  
   /// Obtain a new or existing and available connection
   /// - Returns: PostgresConnection
   func obtain() async throws -> PostgresConnection {
-//    if available.isEmpty {
-//      guard all.count < 24 else {
-//        throw TableObjectError.general("Too Many pending connections")
-//      }
-    serial += 1
-      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: serial, logger: PostgresClientORM.logger)
-//      all.append(connection)
+    if available.isEmpty {
+      guard all.count < 24 else {
+        throw TableObjectError.general("Too Many pending connections")
+      }
+      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.logger)
+      all.append(connection)
       return connection
-//    } else {
-//      let outgoing = available.removeLast()
-//      return outgoing
-//    }
+    } else {
+      let outgoing = available.removeLast()
+      return outgoing
+    }
   }
 
-//  private func finished(connection: PostgresConnection) {
-//    available.append(connection)
-//  }
+  private func finished(connection: PostgresConnection) {
+    available.append(connection)
+  }
   
   /// Releae a previously obtained connection. No more actions can be performed on this connection.
   /// - Parameter connection: The connection to release
   nonisolated func release(connection: PostgresConnection) {
     Task.detached {
-      try? await Task.sleep(for: .milliseconds(100))
-      try? await connection.close()
+      await self.finished(connection: connection)
     }
   }
   
@@ -108,9 +106,9 @@ actor ConnectionGroup {
     let connection = try await obtain()
     do {
       try await doBlock(connection)
-      release(connection: connection)
+      finished(connection: connection)
     } catch {
-      release(connection: connection)
+      finished(connection: connection)
       throw error
     }
   }
