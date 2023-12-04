@@ -95,10 +95,8 @@ public struct RowEncoder<Key: CodingKey> {
   }
   
   public func encode(_ value: (some PostgresEncodable)?, forKey key: Key) throws {
-    if let value {
-      writer.values.append(value)
-      writer.variableNames.append(variableName(forKey: key))
-    }
+    writer.values.append(value)
+    writer.variableNames.append(variableName(forKey: key))
   }
   
   public func encode<T>(_ value: T, forKey key: Key) throws where T: FieldSubset {
