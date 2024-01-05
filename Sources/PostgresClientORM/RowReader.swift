@@ -80,6 +80,12 @@ public struct RowDecoder<Key: CodingKey> {
       return vt
     } else {
       let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+      if !CharacterSet(charactersIn: str).subtracting(CharacterSet(charactersIn: "0123456789")).isEmpty && !str.hasPrefix("[") && !str.hasPrefix("{") {
+        guard let data = "\"\(str)\"".data(using: .utf8) else {
+          throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
+        }
+        return try JSONDecoder().decode(T.self, from: data)
+      }
       guard let data = str.data(using: .utf8) else {
         throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
       }
