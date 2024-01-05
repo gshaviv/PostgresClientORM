@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  CodingDiagnositc.swift
+//
 //
 //  Created by Guy Shaviv on 26/10/2023.
 //
@@ -20,21 +20,21 @@ public struct GeneratorDiagnostic: DiagnosticMessage, Error {
     /// Creates a new diagnostic message.
     public init(message: String, diagnosticID: GeneratorMessageID, severity: DiagnosticSeverity) {
         self.message = message
-      self.diagnosticID = diagnosticID.id
+        self.diagnosticID = diagnosticID.id
         self.severity = severity
     }
 }
 
 public enum GeneratorMessageID {
-  case general
-  case arguments
-  
-  var id: MessageID {
-    switch self {
-    case .general:
-      return MessageID(domain: "CodingKeysGenerator", id: "general")
-    case .arguments:
-      return MessageID(domain: "CodingKeysGenerator", id: "arguments")
+    case general
+    case arguments
+
+    var id: MessageID {
+        switch self {
+        case .general:
+            MessageID(domain: "CodingKeysGenerator", id: "general")
+        case .arguments:
+            MessageID(domain: "CodingKeysGenerator", id: "arguments")
+        }
     }
-  }
 }

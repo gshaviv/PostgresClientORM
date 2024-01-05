@@ -1,123 +1,157 @@
 //
-//  File.swift
+//  RowReader.swift
 //
 //
 //  Created by Guy Shaviv on 23/10/2023.
 //
 
 import Foundation
-import PostgresNIO
+import PerfectPostgreSQL
+
+public protocol RowDecodable {}
+extension Int: RowDecodable {}
+extension Int8: RowDecodable {}
+extension Int16: RowDecodable {}
+extension Int32: RowDecodable {}
+extension Int64: RowDecodable {}
+extension UInt: RowDecodable {}
+extension UInt8: RowDecodable {}
+extension UInt16: RowDecodable {}
+extension UInt32: RowDecodable {}
+extension UInt64: RowDecodable {}
+extension String: RowDecodable {}
 
 struct RowReader {
-  private let prefix: [String]
-  private let row: PostgresRandomAccessRow
-  
-  init(row: PostgresRow) {
-    self.row = PostgresRandomAccessRow(row)
-    prefix = []
-  }
-  
-  init(prefix: [String], row: PostgresRandomAccessRow) {
-    self.row = row
-    self.prefix = prefix
-  }
-  
-  /// Decocde an instance of given type
-  /// - Parameter type: the type to decoce
-  /// - Returns: An instance of type
-  public func decode<T: FieldSubset>(_ type: T.Type) throws -> T {
-    try T(row: self.decoder(keyedBy: T.Columns.self))
-  }
-  
-  func decoder<Key>(keyedBy: Key.Type) -> RowDecoder<Key> where Key: CodingKey {
-    RowDecoder(prefix: prefix, row: row)
-  }
+    private let prefix: [String]
+    private let row: ResultRow
+
+    init(row: ResultRow) {
+        self.row = row
+        prefix = []
+    }
+
+    init(prefix: [String], row: ResultRow) {
+        self.row = row
+        self.prefix = prefix
+    }
+
+    /// Decocde an instance of given type
+    /// - Parameter type: the type to decoce
+    /// - Returns: An instance of type
+    public func decode<T: FieldSubset>(_: T.Type) throws -> T {
+        try T(row: decoder(keyedBy: T.Columns.self))
+    }
+
+    func decoder<Key>(keyedBy _: Key.Type) -> RowDecoder<Key> where Key: CodingKey {
+        RowDecoder(prefix: prefix, row: row)
+    }
 }
 
 /// A row decoder keywe by a Column type
 public struct RowDecoder<Key: CodingKey> {
-  let prefix: [String]
-  let row: PostgresRandomAccessRow
-  
-  init(prefix: [String] = [], row: PostgresRandomAccessRow) {
-    self.row = row
-    self.prefix = prefix
-  }
-  
-  public func decode<T: PostgresDecodable>(_ type: T.Type, forKey key: Key) throws -> T {
-    try row[path: prefix, key].decode(type)
-  }
-  
-  public func decode<T: RawRepresentable>(_ type: T.Type, forKey key: Key) throws -> T where T.RawValue: PostgresDecodable {
-    guard let value = T(rawValue: try decode(T.RawValue.self, forKey: key)) else {
-      throw PostgresDecodingError.Code.failure
-    }
-    return value
-  }
-  
-  public func decode<T: RawRepresentable>(_ type: T?.Type, forKey key: Key) throws -> T? where T.RawValue: PostgresDecodable {
-    guard let value = T(rawValue: try decode(T.RawValue.self, forKey: key)) else {
-      return nil
-    }
-    return value
-  }
-  
-  public func decode<T: FieldSubset>(_ type: T.Type, forKey key: Key) throws -> T {
-    let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
-    return try reader.decode(type)
-  }
+    let prefix: [String]
+    let row: ResultRow
 
-  public func contains(_ key: Key) -> Bool {
-    row.contains(path: prefix, key: key)
-  }
-  
-  public func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
-    try Int8(row[path: prefix, key].decode(Int.self))
-  }
-  
-  public func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
-    try UInt(row[path: prefix, key].decode(Int.self))
-  }
-  
-  public func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
-    try UInt16(row[path: prefix, key].decode(Int.self))
-  }
-  
-  public func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
-    try UInt32(row[path: prefix, key].decode(Int.self))
-  }
-  
-  public func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
-    try UInt64(row[path: prefix, key].decode(Int64.self))
-  }
-  
-  public func decode(_ type: Int8?.Type, forKey key: Key) throws -> Int8? {
-    try? decode(Int8.self, forKey: key)
-  }
-  
-  public func decode(_ type: UInt?.Type, forKey key: Key) throws -> UInt? {
-    try? decode(UInt.self, forKey: key)
-  }
-  
-  public func decode(_ type: UInt16?.Type, forKey key: Key) throws -> UInt16? {
-    try? decode(UInt16.self, forKey: key)
-  }
-  
-  public func decode(_ type: UInt32?.Type, forKey key: Key) throws -> UInt32? {
-    try? decode(UInt32.self, forKey: key)
-  }
-  
-  public func decode(_ type: UInt64?.Type, forKey key: Key) throws -> UInt64? {
-    try? decode(UInt64.self, forKey: key)
-  }
-}
+    init(prefix: [String] = [], row: ResultRow) {
+        self.row = row
+        self.prefix = prefix
+    }
 
-extension PostgresRandomAccessRow {
-  subscript(path prefix: [String], key: CodingKey) -> PostgresCell {
-    self[(prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")]
-  }
-  
-  func contains(path prefix: [String] = [], key: CodingKey) -> Bool {
-    contains((prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_"))
-  }
+    public func decode<T: RawRepresentable>(_: T.Type, forKey key: Key) throws -> T where T.RawValue == Int {
+        guard let value = try T(rawValue: decode(T.RawValue.self, forKey: key)) else {
+            throw TableObjectError.general("error decoding type \(type(of: T.self))")
+        }
+        return value
+    }
+
+    public func decode<T: RawRepresentable>(_: T?.Type, forKey key: Key) throws -> T? where T.RawValue == String {
+        guard let value = try T(rawValue: decode(T.RawValue.self, forKey: key)) else {
+            return nil
+        }
+        return value
+    }
+
+    public func decode<T: Decodable>(_: T.Type, forKey key: Key) throws -> T {
+        let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+        guard let data = str.data(using: .utf8) else {
+            throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
+        }
+        return try JSONDecoder().decode(T.self, from: data)
+    }
+
+    public func decode<T: Decodable>(_: T?.Type, forKey key: Key) throws -> T? {
+        guard try !row.isNull(key: key, path: prefix) else {
+            return nil
+        }
+        let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+        guard let data = str.data(using: .utf8) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
+
+    public func decode<T: FieldSubset>(_ type: T.Type, forKey key: Key) throws -> T {
+        let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
+        return try reader.decode(type)
+    }
+
+    public func contains(_ key: Key) -> Bool {
+        row.contains(key: key, path: prefix)
+    }
+
+    public func decode(_: Int.Type, forKey key: Key) throws -> Int {
+        try row.value(ofType: Int.self, forKey: key, path: prefix)
+    }
+
+    public func decode(_: String.Type, forKey key: Key) throws -> String {
+        try row.value(ofType: String.self, forKey: key, path: prefix)
+    }
+
+    public func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
+        try row.value(ofType: type, forKey: key, path: prefix)
+    }
+
+    public func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
+        try row.value(ofType: type, forKey: key, path: prefix)
+    }
+
+    public func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
+        try row.value(ofType: type, forKey: key, path: prefix)
+    }
+
+    public func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
+        try row.value(ofType: type, forKey: key, path: prefix)
+    }
+
+    public func decode(_: UInt.Type, forKey key: Key) throws -> UInt {
+        let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+        guard let v = UInt(str) else {
+            throw TableObjectError.general("Value for key: \(key)")
+        }
+        return v
+    }
+
+    public func decode(_: UInt16.Type, forKey key: Key) throws -> UInt16 {
+        let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+        guard let v = UInt16(str) else {
+            throw TableObjectError.general("Value for key: \(key)")
+        }
+        return v
+    }
+
+    public func decode(_: UInt32.Type, forKey key: Key) throws -> UInt32 {
+        let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+        guard let v = UInt32(str) else {
+            throw TableObjectError.general("Value for key: \(key)")
+        }
+        return v
+    }
+
+    public func decode(_: UInt64.Type, forKey key: Key) throws -> UInt64 {
+        let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+        guard let v = UInt64(str) else {
+            throw TableObjectError.general("Value for key: \(key)")
+        }
+        return v
+    }
 }

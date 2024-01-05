@@ -1,40 +1,41 @@
 //
-//  File.swift
+//  CountRetrieval.swift
 //
 //
 //  Created by Guy Shaviv on 30/10/2023.
 //
 
 import Foundation
-import PostgresNIO
+import PerfectPostgreSQL
 
 @_documentation(visibility: private)
 public struct CountRetrieval: TableObject {
-  public static var idColumn: ColumnName { column(.count) }
+    public static var idColumn: ColumnName { column(.count) }
 
-  public enum Columns: String, CodingKey {
-    case count
-  }
+    public enum Columns: String, CodingKey {
+        case count
+    }
 
-  let _idHolder = OptionalContainer<Int>()
-  public var id: Int? {
-    get { _idHolder.value }
-    nonmutating set { _idHolder.value = newValue }
-  }
-  var count: Int
-  public static let tableName = ""
-  
-  public init(row: RowDecoder<Columns>) throws {
-    self.count = try row.decode(Int.self, forKey: .count)
-  }
-  
-  public func encode(row: RowEncoder<Columns>) throws {
-    try row.encode(self.count, forKey: .count)
-  }
+    let _idHolder = OptionalContainer<Int>()
+    public var id: Int? {
+        get { _idHolder.value }
+        nonmutating set { _idHolder.value = newValue }
+    }
+
+    var count: Int
+    public static let tableName = ""
+
+    public init(row: RowDecoder<Columns>) throws {
+        count = try row.decode(Int.self, forKey: .count)
+    }
+
+    public func encode(row: RowEncoder<Columns>) throws {
+        try row.encode(count, forKey: .count)
+    }
 }
 
 public extension Query<CountRetrieval> {
-  func execute(transactionConnection: PostgresConnection? = nil) async throws -> Int {
-    try await Database.handler.getCount(sqlQuery: self, transactionConnection: transactionConnection)
-  }
+    func execute(transactionConnection: PGConnection? = nil) async throws -> Int {
+        try await Database.handler.getCount(sqlQuery: self, transactionConnection: transactionConnection)
+    }
 }

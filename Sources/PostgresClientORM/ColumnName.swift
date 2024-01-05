@@ -16,30 +16,30 @@ import Foundation
 /// "loc" -› "lat" = 34 // equivalent to column loc_lat
 /// ```
 public struct ColumnName: LosslessStringConvertible {
-  public var name: String
-  let fromLiteral: Bool
-  public var description: String {
-    "\"\(name)\""
-  }
+    public var name: String
+    let fromLiteral: Bool
+    public var description: String {
+        "\"\(name)\""
+    }
 
-  public init(stringLiteral value: String) {
-    name = value
-    fromLiteral = true
-  }
+    public init(stringLiteral value: String) {
+        name = value
+        fromLiteral = true
+    }
 
-  public init(_ name: String) {
-    self.name = name
-    fromLiteral = false
-  }
+    public init(_ name: String) {
+        self.name = name
+        fromLiteral = false
+    }
 }
 
 infix operator -›: MultiplicationPrecedence
 
 /// Column name of a column in a ``FieldSubset`` property
 public func -› (lhs: ColumnName, rhs: ColumnName) -> ColumnName {
-  if rhs.name.isEmpty {
-    return lhs
-  } else {
-    return ColumnName("\(lhs.name)_\(rhs.name)")
-  }
+    if rhs.name.isEmpty {
+        lhs
+    } else {
+        ColumnName("\(lhs.name)_\(rhs.name)")
+    }
 }
