@@ -8,7 +8,7 @@
 import Foundation
 
 /// Protocol for encoding / decoding an SQL row
-public protocol FieldSubset: Codable {
+public protocol FieldSubset {
   /// The column keys
   /// A String based CodingKey enum with cases named after the properties that are encoded
   associatedtype Columns: CodingKey

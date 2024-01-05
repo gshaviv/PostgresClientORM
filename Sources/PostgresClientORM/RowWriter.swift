@@ -180,4 +180,9 @@ public struct RowEncoder<Key: CodingKey> {
     let subWriter = RowWriter(prefix: prefix + [key.stringValue], parent: writer)
     try value.encode(row: subWriter.encoder(keyedBy: T.Columns.self))
   }
+  
+  public func encode<T: FieldSubset>(_ value: T, forKey key: Key) throws {
+    let subWriter = RowWriter(prefix: prefix + [key.stringValue], parent: writer)
+    try value.encode(row: subWriter.encoder(keyedBy: T.Columns.self))
+  }
 }
