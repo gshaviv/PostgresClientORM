@@ -10,32 +10,32 @@ import PerfectPostgreSQL
 
 @_documentation(visibility: private)
 public struct CountRetrieval: TableObject {
-    public static var idColumn: ColumnName { column(.count) }
+  public static var idColumn: ColumnName { column(.count) }
 
-    public enum Columns: String, CodingKey {
-        case count
-    }
+  public enum Columns: String, CodingKey {
+    case count
+  }
 
-    let _idHolder = OptionalContainer<Int>()
-    public var id: Int? {
-        get { _idHolder.value }
-        nonmutating set { _idHolder.value = newValue }
-    }
+  let _idHolder = OptionalContainer<Int>()
+  public var id: Int? {
+    get { _idHolder.value }
+    nonmutating set { _idHolder.value = newValue }
+  }
 
-    var count: Int
-    public static let tableName = ""
+  var count: Int
+  public static let tableName = ""
 
-    public init(row: RowDecoder<Columns>) throws {
-        count = try row.decode(Int.self, forKey: .count)
-    }
+  public init(row: RowDecoder<Columns>) throws {
+    count = try row.decode(Int.self, forKey: .count)
+  }
 
-    public func encode(row: RowEncoder<Columns>) throws {
-        try row.encode(count, forKey: .count)
-    }
+  public func encode(row: RowEncoder<Columns>) throws {
+    try row.encode(count, forKey: .count)
+  }
 }
 
 public extension Query<CountRetrieval> {
-    func execute(transactionConnection: PGConnection? = nil) async throws -> Int {
-        try await Database.handler.getCount(sqlQuery: self, transactionConnection: transactionConnection)
-    }
+  func execute(transactionConnection: PGConnection? = nil) async throws -> Int {
+    try await Database.handler.getCount(sqlQuery: self, transactionConnection: transactionConnection)
+  }
 }

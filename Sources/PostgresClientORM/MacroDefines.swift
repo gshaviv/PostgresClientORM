@@ -1,13 +1,14 @@
 import Foundation
+
 public enum KeyType {
-    case camelCase
-    case snakeCase
+  case camelCase
+  case snakeCase
 }
 
 public enum CodingKeyType {
-    case camelCase
-    case snakeCase
-    case none
+  case camelCase
+  case snakeCase
+  case none
 }
 
 /// Expans to conformnce to the ``FieldSubset`` protocol
@@ -34,8 +35,8 @@ public macro TableObject(columns: KeyType = .snakeCase, table: String, idType: A
 /// ```
 @attached(peer)
 public macro Column(name: String) = #externalMacro(
-    module: "PostgresORMMacros",
-    type: "CustomCodingKeyMacro"
+  module: "PostgresORMMacros",
+  type: "CustomCodingKeyMacro"
 )
 
 /// Set a custom name for ``Codable``
@@ -45,8 +46,8 @@ public macro Column(name: String) = #externalMacro(
 /// ```
 @attached(peer)
 public macro Coding(key: String) = #externalMacro(
-    module: "PostgresORMMacros",
-    type: "CustomCodingKeyMacro"
+  module: "PostgresORMMacros",
+  type: "CustomCodingKeyMacro"
 )
 
 /// Ignore this column and do not encode/decode it from an SQL row

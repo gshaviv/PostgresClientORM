@@ -9,7 +9,7 @@ import Foundation
 
 @_documentation(visibility: private)
 public class OptionalContainer<Type: Codable> {
-    public var value: Type?
+  public var value: Type?
 
-    public init() {}
+  public init() {}
 }
