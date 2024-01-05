@@ -18,11 +18,10 @@ public actor Database {
   private init() {}
   
   func getCount(sqlQuery: Query<CountRetrieval>, transactionConnection: PostgresConnection? = nil) async throws -> Int {
-    let connection: PostgresConnection
-    if let transactionConnection {
-      connection = transactionConnection
+    let connection: PostgresConnection = if let transactionConnection {
+      transactionConnection
     } else {
-      connection = try await ConnectionGroup.shared.obtain()
+      try await ConnectionGroup.shared.obtain()
     }
     
     defer {
@@ -44,29 +43,24 @@ public actor Database {
   ///   - transactionConnection: if part of transaction, the transaction connection (optional)
   /// - Returns: and array of results, TYPE is deried from the ``Query``
   public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
-    let connection: PostgresConnection
-    if let transactionConnection {
-      connection = transactionConnection
+    let connection: PostgresConnection = if let transactionConnection {
+      transactionConnection
     } else {
-      connection = try await ConnectionGroup.shared.obtain()
+      try await ConnectionGroup.shared.obtain()
     }
     
-    do {
-      var items = [TYPE]()
-      let results = sqlQuery.results(transactionConnection: connection)
-      for try await item in results {
-        items.append(item)
-      }
+    defer {
       if transactionConnection == nil {
         ConnectionGroup.shared.release(connection: connection)
       }
-      return items
-    } catch {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
-      throw error
     }
+    
+    var items = [TYPE]()
+    let results = sqlQuery.results(transactionConnection: connection)
+    for try await item in results {
+      items.append(item)
+    }
+    return items
   }
   
   /// Execute a ``Query`` with a RETURNING clause
@@ -76,11 +70,10 @@ public actor Database {
   ///   - transaction: optional: if part of a transaction, it's id.
   /// - Returns: an instance of return type
   public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, transactionConnection: PostgresConnection? = nil) async throws -> RET {
-    let connection: PostgresConnection
-    if let transactionConnection {
-      connection = transactionConnection
+    let connection: PostgresConnection = if let transactionConnection {
+      transactionConnection
     } else {
-      connection = try await ConnectionGroup.shared.obtain()
+      try await ConnectionGroup.shared.obtain()
     }
     defer {
       if transactionConnection == nil {
@@ -103,39 +96,34 @@ public actor Database {
   ///   - transactionConnection: (Optional)  if participating in a transaction)
   /// - Returns: an array of TYPE
   public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
-    let connection: PostgresConnection
-    if let transactionConnection {
-      connection = transactionConnection
+    let connection: PostgresConnection = if let transactionConnection {
+      transactionConnection
     } else {
-      connection = try await ConnectionGroup.shared.obtain()
+      try await ConnectionGroup.shared.obtain()
     }
     
-    do {
-      let rows = try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
-      var iterator = rows.makeAsyncIterator()
-      
-      var items = [TYPE]()
-      
-      while let row = try await iterator.next() {
-        let decoder = RowReader(row: row)
-        let v = try decoder.decode(TYPE.self)
-        
-        if let v = v as? any SaveableTableObject {
-          v.dbHash = try v.calculcateDbHash()
-        }
-        items.append(v)
-      }
-      
+    defer {
       if transactionConnection == nil {
         ConnectionGroup.shared.release(connection: connection)
       }
-      return items
-    } catch {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
-      throw error
     }
+    
+    let rows = try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
+    var iterator = rows.makeAsyncIterator()
+      
+    var items = [TYPE]()
+      
+    while let row = try await iterator.next() {
+      let decoder = RowReader(row: row)
+      let v = try decoder.decode(TYPE.self)
+        
+      if let v = v as? any SaveableTableObject {
+        v.dbHash = try v.calculcateDbHash()
+      }
+      items.append(v)
+    }
+      
+    return items
   }
   
   /// Execute an sql text with no return value
@@ -143,11 +131,10 @@ public actor Database {
   ///   - sqlText: The SQL text to run
   ///   - transactionConnection: (optional) transaction connection
   public func execute(_ sqlText: String, transactionConnection: PostgresConnection? = nil) async throws {
-    let connection: PostgresConnection
-    if let transactionConnection {
-      connection = transactionConnection
+    let connection: PostgresConnection = if let transactionConnection {
+      transactionConnection
     } else {
-      connection = try await ConnectionGroup.shared.obtain()
+      try await ConnectionGroup.shared.obtain()
     }
     
     defer {
@@ -164,20 +151,15 @@ public actor Database {
   /// - NOTE: **Important** remeber to include the transaction connection to the  database operations in the block, not doing so will cause the action to be performed outside the transaction.
   public func transaction(file: String = #file, line: Int = #line, _ transactionBlock: @escaping (_ connecction: PostgresConnection) async throws -> Void) async throws {
     let connection = try await ConnectionGroup.shared.obtain()
-    do {
-      try await connection.beginTransaction()
-      do {
-        try await transactionBlock(connection)
-        try await connection.commitTransaction()
-      } catch {
-        try await connection.rollbackTransaction()
-      }
-      
+    defer {
       ConnectionGroup.shared.release(connection: connection)
+    }
+    try await connection.beginTransaction()
+    do {
+      try await transactionBlock(connection)
+      try await connection.commitTransaction()
     } catch {
       try await connection.rollbackTransaction()
-      ConnectionGroup.shared.release(connection: connection)
-      throw error
     }
   }
 }
