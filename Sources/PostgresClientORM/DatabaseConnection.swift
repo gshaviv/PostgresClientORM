@@ -38,10 +38,13 @@ public class DatabaseConnection {
   }
 
   deinit {
-    do {
-      try connection.close().wait()
-    } catch {
-      PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
+    let c = connection
+    Task.detached {
+      do {
+        try await c.close()
+      } catch let error as PSQLError {
+        PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
+      }
     }
   }
 
