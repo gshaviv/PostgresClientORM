@@ -21,20 +21,21 @@ public struct CountRetrieval: TableObject {
     get { _idHolder.value }
     nonmutating set { _idHolder.value = newValue }
   }
+
   var count: Int
   public static let tableName = ""
-  
+
   public init(row: RowDecoder<Columns>) throws {
     self.count = try row.decode(Int.self, forKey: .count)
   }
-  
+
   public func encode(row: RowEncoder<Columns>) throws {
-    try row.encode(self.count, forKey: .count)
+    try row.encode(count, forKey: .count)
   }
 }
 
 public extension Query<CountRetrieval> {
-  func execute(transactionConnection: PostgresConnection? = nil) async throws -> Int {
+  func execute(transactionConnection: DatabaseConnection? = nil) async throws -> Int {
     try await Database.handler.getCount(sqlQuery: self, transactionConnection: transactionConnection)
   }
 }

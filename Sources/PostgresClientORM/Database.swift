@@ -17,17 +17,11 @@ public actor Database {
   
   private init() {}
   
-  func getCount(sqlQuery: Query<CountRetrieval>, transactionConnection: PostgresConnection? = nil) async throws -> Int {
-    let connection: PostgresConnection = if let transactionConnection {
+  func getCount(sqlQuery: Query<CountRetrieval>, transactionConnection: DatabaseConnection? = nil) async throws -> Int {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
-    }
-    
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+      try await Connection.obtain()
     }
     
     let rows = try await (transactionConnection ?? connection).query(sqlQuery.postgresQuery, logger: connection.logger)
@@ -42,17 +36,11 @@ public actor Database {
   ///   - sqlQuery: the ``Query`` to execute
   ///   - transactionConnection: if part of transaction, the transaction connection (optional)
   /// - Returns: and array of results, TYPE is deried from the ``Query``
-  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
-    let connection: PostgresConnection = if let transactionConnection {
+  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
-    }
-    
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+      try await Connection.obtain()
     }
     
     var items = [TYPE]()
@@ -69,16 +57,11 @@ public actor Database {
   ///   - returning: The type being returned
   ///   - transaction: optional: if part of a transaction, it's id.
   /// - Returns: an instance of return type
-  public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, transactionConnection: PostgresConnection? = nil) async throws -> RET {
-    let connection: PostgresConnection = if let transactionConnection {
+  public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, transactionConnection: DatabaseConnection? = nil) async throws -> RET {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
-    }
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+      try await Connection.obtain()
     }
     
     let rows = try await connection.query(sqlQuery.postgresQuery, logger: connection.logger)
@@ -95,17 +78,11 @@ public actor Database {
   ///   - sqlText: the text of the sql query to perform
   ///   - transactionConnection: (Optional)  if participating in a transaction)
   /// - Returns: an array of TYPE
-  public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
-    let connection: PostgresConnection = if let transactionConnection {
+  public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
-    }
-    
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+      try await Connection.obtain()
     }
     
     let rows = try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
@@ -130,17 +107,11 @@ public actor Database {
   /// - Parameters:
   ///   - sqlText: The SQL text to run
   ///   - transactionConnection: (optional) transaction connection
-  public func execute(_ sqlText: String, transactionConnection: PostgresConnection? = nil) async throws {
-    let connection: PostgresConnection = if let transactionConnection {
+  public func execute(_ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
-    }
-    
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+      try await Connection.obtain()
     }
     
     try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
@@ -149,11 +120,8 @@ public actor Database {
   /// Perform database operations in a transaction
   /// - Parameter transactionBlock: The transaction block receives a transactionConnection parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
   /// - NOTE: **Important** remeber to include the transaction connection to the  database operations in the block, not doing so will cause the action to be performed outside the transaction.
-  public func transaction(file: String = #file, line: Int = #line, _ transactionBlock: @escaping (_ connecction: PostgresConnection) async throws -> Void) async throws {
-    let connection = try await ConnectionGroup.shared.obtain()
-    defer {
-      ConnectionGroup.shared.release(connection: connection)
-    }
+  public func transaction(file: String = #file, line: Int = #line, _ transactionBlock: @escaping (_ connecction: DatabaseConnection) async throws -> Void) async throws {
+    let connection = try await Connection.obtain()
     try await connection.beginTransaction()
     do {
       try await transactionBlock(connection)
@@ -164,7 +132,7 @@ public actor Database {
   }
 }
 
-public extension PostgresConnection {
+public extension DatabaseConnection {
   func beginTransaction() async throws {
     try await query("begin transaction", logger: logger)
   }

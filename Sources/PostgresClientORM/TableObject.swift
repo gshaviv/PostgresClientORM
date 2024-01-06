@@ -20,7 +20,7 @@ public extension TableObject {
     Query(sql: "SELECT * FROM \(tableName)")
   }
 
-  func delete(transactionConnection: PostgresConnection? = nil) async throws {
+  func delete(transactionConnection: DatabaseConnection? = nil) async throws {
     _ = try await Query<Self>(sql: "DELETE FROM \(Self.tableName)")
       .where {
         Self.idColumn == id
@@ -36,7 +36,7 @@ public extension TableObject {
     Query(sql: "SELECT count(*) FROM \(tableName)")
   }
 
-  static func fetch(id: IDType?, transactionConnection: PostgresConnection? = nil) async throws -> Self? {
+  static func fetch(id: IDType?, transactionConnection: DatabaseConnection? = nil) async throws -> Self? {
     guard let id else {
       return nil
     }
@@ -46,7 +46,7 @@ public extension TableObject {
     .execute(transactionConnection: transactionConnection).first
   }
 
-  nonmutating func insert(transactionConnection: PostgresConnection? = nil) async throws {
+  nonmutating func insert(transactionConnection: DatabaseConnection? = nil) async throws {
     if let optionalid = id as? UUID?, optionalid == nil {
       id = UUID() as? IDType
     }
@@ -61,7 +61,7 @@ public extension TableObject {
     }
   }
 
-  nonmutating func update(transactionConnection: PostgresConnection? = nil) async throws {
+  nonmutating func update(transactionConnection: DatabaseConnection? = nil) async throws {
     guard id != nil else {
       throw PostgresError.protocol("id is nil")
     }
@@ -79,7 +79,7 @@ public extension TableObject {
     }
   }
 
-  nonmutating func updateColumns(_ columns: ColumnName..., transactionConnection: PostgresConnection? = nil) async throws {
+  nonmutating func updateColumns(_ columns: ColumnName..., transactionConnection: DatabaseConnection? = nil) async throws {
     guard id != nil else {
       throw PostgresError.protocol("id is nil")
     }
@@ -105,9 +105,9 @@ public enum TableObjectError: Error, LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .general(message):
-      return "TableObject Error: \(message)"
+      "TableObject Error: \(message)"
     case .unsupported:
-      return "TableObject Unsupported"
+      "TableObject Unsupported"
     }
   }
 }
@@ -125,14 +125,14 @@ public extension TrackingDirty where Self: TableObject {
   /// - Parameter transactionConnection: optional: transaction connection
   ///
   /// If the receiver is not dirty this method does nothing. If it is dirty it wil update the database record for the instance. If this is a new object that was never read from the database, this method will insert it.
-  nonmutating func save(transactionConnection: PostgresConnection? = nil) async throws {
+  nonmutating func save(transactionConnection: DatabaseConnection? = nil) async throws {
     if id == nil || dbHash == nil {
       try await insert(transactionConnection: transactionConnection)
     } else {
       try await update(transactionConnection: transactionConnection)
     }
   }
-  
+
   /// Is instance dirty?
   ///
   /// An instance is dirty if it was modified in memroy after being read from the database.

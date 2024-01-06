@@ -54,7 +54,7 @@ public struct Query<TYPE: FieldSubset> {
     self.sqlString = sql
     self.bindings = binding
   }
-  
+
   /// Add *WHERE* caluses to the query
   ///
   /// - Example:
@@ -95,14 +95,14 @@ public struct Query<TYPE: FieldSubset> {
     newSql += " \(all.joined(separator: " and "))"
     return Query(sql: newSql, binding: bindings)
   }
-  
+
   /// SQL limit
   /// - Parameter n: number of results to limit
   /// - Returns: the query with limit applied
   public func limit(_ n: Int) -> Query<TYPE> {
     Query(sql: self.sqlString + " LIMIT \(n)", binding: self.bindings)
   }
-  
+
   /// Returrn a column value on modified rows
   /// - Note: This must be the last clause in the statement
   /// - Parameter col: column name
@@ -110,7 +110,7 @@ public struct Query<TYPE: FieldSubset> {
   public func returning(_ col: ColumnName) -> Query<TYPE> {
     Query(sql: self.sqlString + " RETURNING \(col)", binding: self.bindings)
   }
-  
+
   /// Sort direction
   public enum OrderBy: String {
     /// sort direction ascending
@@ -118,7 +118,7 @@ public struct Query<TYPE: FieldSubset> {
     /// sort direction descendng
     case descending = "DESC"
   }
-  
+
   /// Order by (sort) the results
   /// - Parameters:
   ///   - columns: the column names to sort by
@@ -127,21 +127,21 @@ public struct Query<TYPE: FieldSubset> {
   public func orderBy(_ columns: ColumnName..., direction: OrderBy = .ascending) -> Self {
     Query(sql: self.sqlString + " ORDER BY \(columns.map(\.description).joined(separator: ",")) \(direction == .descending ? direction.rawValue : "")", binding: self.bindings)
   }
-  
+
   /// Order by
   /// - Parameter pairs: paris of column names with sort direction, use this version if sort needs to be by different direction each column
   /// - Returns: Query with order applied
   public func orderBy(_ pairs: (ColumnName, OrderBy)...) -> Self {
     Query(sql: self.sqlString + " ORDER BY \(pairs.map { "\($0.0.description) \($0.1.rawValue)" }.joined(separator: ","))", binding: self.bindings)
   }
-  
+
   /// Execute query
   /// - Parameter transactionConnection: if part of a transaction
   /// - Returns: an array of results
-  @discardableResult public func execute(transactionConnection: PostgresConnection? = nil) async throws -> [TYPE] {
-    try await Database.handler.execute(sqlQuery: self, transactionConnection:  transactionConnection)
+  @discardableResult public func execute(transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
+    try await Database.handler.execute(sqlQuery: self, transactionConnection: transactionConnection)
   }
-  
+
   /// Sequence of results
   ///
   /// This is more optimal than loading all the results to memory in an array. Returns a sequence of results that can be iterated on.
@@ -156,8 +156,8 @@ public struct Query<TYPE: FieldSubset> {
   public var results: QueryResults<TYPE> {
     QueryResults(query: self)
   }
-  
-  public func results(transactionConnection: PostgresConnection) -> QueryResults<TYPE> {
+
+  public func results(transactionConnection: DatabaseConnection) -> QueryResults<TYPE> {
     QueryResults(query: self, connection: transactionConnection)
   }
 }
