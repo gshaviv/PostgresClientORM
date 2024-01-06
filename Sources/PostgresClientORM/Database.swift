@@ -115,6 +115,7 @@ public actor Database {
     }
     
     try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
+    print("done")
   }
   
   /// Perform database operations in a transaction
