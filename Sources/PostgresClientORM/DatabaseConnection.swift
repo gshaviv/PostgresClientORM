@@ -44,6 +44,8 @@ public class DatabaseConnection {
         try await c.close()
       } catch let error as PSQLError {
         PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
+      } catch let error as PostgresError {
+        PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
       }
     }
   }
