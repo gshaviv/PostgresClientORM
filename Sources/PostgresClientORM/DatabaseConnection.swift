@@ -46,6 +46,8 @@ public class DatabaseConnection {
         PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
       } catch let error as PostgresError {
         PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
+      } catch {
+        PostgresClientORM.logger.error("** Error while closing: \(type(of: error))")
       }
     }
   }
