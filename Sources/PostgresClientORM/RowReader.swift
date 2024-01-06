@@ -71,26 +71,28 @@ public struct RowDecoder<Key: CodingKey> {
     return value
   }
 
-  public func decode<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> T {
-    if let fs = type as? any FieldSubset.Type {
-      let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
-      guard let vt = try reader.decode(fs) as? T else {
-        throw TableObjectError.general("strange?")
-      }
-      return vt
-    } else {
-      let str = try row.value(ofType: String.self, forKey: key, path: prefix)
-      if !CharacterSet(charactersIn: str).subtracting(CharacterSet(charactersIn: "0123456789")).isEmpty && !str.hasPrefix("[") && !str.hasPrefix("{") {
-        guard let data = "\"\(str)\"".data(using: .utf8) else {
-          throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
-        }
-        return try JSONDecoder().decode(T.self, from: data)
-      }
-      guard let data = str.data(using: .utf8) else {
+  public func decode<T: Decodable>(_: T.Type, forKey key: Key) throws -> T {
+    let str = try row.value(ofType: String.self, forKey: key, path: prefix)
+    if !CharacterSet(charactersIn: str).subtracting(CharacterSet(charactersIn: "0123456789")).isEmpty, !str.hasPrefix("["), !str.hasPrefix("{") {
+      guard let data = "\"\(str)\"".data(using: .utf8) else {
         throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
       }
       return try JSONDecoder().decode(T.self, from: data)
     }
+    guard let data = str.data(using: .utf8) else {
+      throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
+    }
+    return try JSONDecoder().decode(T.self, from: data)
+  }
+
+  public func decode<T: Decodable & FieldSubset>(_ type: T.Type, forKey key: Key) throws -> T {
+    let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
+    return try reader.decode(type)
+  }
+
+  public func decode<T: FieldSubset>(_ type: T.Type, forKey key: Key) throws -> T {
+    let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
+    return try reader.decode(type)
   }
 
   public func decode<T: Decodable>(_: T?.Type, forKey key: Key) throws -> T? {
