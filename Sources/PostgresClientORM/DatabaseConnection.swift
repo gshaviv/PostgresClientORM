@@ -38,7 +38,11 @@ public class DatabaseConnection {
   }
 
   deinit {
-    try? connection.close().wait()
+    do {
+      try connection.close().wait()
+    } catch {
+      PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
+    }
   }
 
   @inlinable @discardableResult
