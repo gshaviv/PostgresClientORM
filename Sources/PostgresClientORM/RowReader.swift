@@ -94,6 +94,16 @@ public struct RowDecoder<Key: CodingKey> {
     }
     return v
   }
+  
+  public func decode<T: Decodable & LosslessStringConvertible>(_: T?.Type, forKey key: Key) throws -> T? {
+    guard try !row.isNull(key: key, path: prefix) else {
+      return nil
+    }
+    guard let v = try T(row.value(ofType: String.self, forKey: key, path: prefix)) else {
+      throw TableObjectError.general("Can't read value for \(key)")
+    }
+    return v
+  }
 
   public func decode<T: Decodable & FieldSubset>(_ type: T.Type, forKey key: Key) throws -> T {
     let reader = RowReader(prefix: prefix + [key.stringValue], row: row)
