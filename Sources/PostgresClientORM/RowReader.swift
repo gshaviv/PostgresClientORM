@@ -20,6 +20,9 @@ extension UInt16: RowDecodable {}
 extension UInt32: RowDecodable {}
 extension UInt64: RowDecodable {}
 extension String: RowDecodable {}
+extension Double: RowDecodable {}
+extension Float: RowDecodable {}
+extension Bool: RowDecodable {}
 
 struct RowReader {
   private let prefix: [String]
