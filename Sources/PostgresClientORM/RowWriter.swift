@@ -167,6 +167,33 @@ public struct RowEncoder<Key: CodingKey> {
     }
   }
 
+  public func encode<T: RawRepresentable & Encodable>(_ value: T, forKey key: Key) throws where T.RawValue == Int {
+    try encode(value.rawValue, forKey: key)
+  }
+
+  public func encode<T: RawRepresentable & Encodable>(_ value: T?, forKey key: Key) throws where T.RawValue == Int {
+    if let value {
+      try encode(value.rawValue, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
+
+  public func encode<T: RawRepresentable & Encodable>(_ value: T, forKey key: Key) throws where T.RawValue == String {
+    try encode(value.rawValue, forKey: key)
+  }
+
+  public func encode<T: RawRepresentable & Encodable>(_ value: T?, forKey key: Key) throws where T.RawValue == String {
+    if let value {
+      try encode(value.rawValue, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
+
+  
   public func encode(_ value: (some Encodable)?, forKey key: Key) throws {
     if let value {
       try encode(value, forKey: key)
