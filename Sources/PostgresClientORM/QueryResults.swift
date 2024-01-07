@@ -26,7 +26,7 @@ public struct QueryResults<Type: FieldSubset>: AsyncSequence {
 }
 
 @_documentation(visibility: private)
-public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
+public class QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
   private var query: Query<T>
   private var connection: PGConnection?
   private var result: PGResult?
@@ -40,7 +40,14 @@ public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
     releaseConnection = connection == nil
   }
 
-  public mutating func next() async throws -> T? {
+  deinit {
+    result?.clear()
+    if let connection, releaseConnection {
+      ConnectionGroup.shared.release(connection: connection)
+    }
+  }
+
+  public func next() async throws -> T? {
     if iterator == nil {
       let resultConnection: PGConnection
       if let connection {
@@ -55,10 +62,6 @@ public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
     }
 
     guard let row = iterator?.next(), let result else {
-      self.result?.clear()
-      if let connection, releaseConnection {
-        ConnectionGroup.shared.release(connection: connection)
-      }
       return nil
     }
     var rowResult = resultRow ?? ResultRow(result: result, row: row)

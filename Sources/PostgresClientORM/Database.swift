@@ -31,10 +31,12 @@ public actor Database {
     }
 
     let rows = try connection.execute(statement: sqlQuery.sqlString, params: sqlQuery.bindings)
+    defer {
+      rows.clear()
+    }
     if let count = rows.getFieldInt(tupleIndex: 0, fieldIndex: 0) {
       return count
     }
-    rows.clear()
     throw TableObjectError.general("no count")
   }
 
@@ -87,10 +89,12 @@ public actor Database {
     }
 
     let rows = try connection.execute(statement: sqlQuery.sqlString, params: sqlQuery.bindings)
+    defer {
+      rows.clear()
+    }
     guard let str = rows.getFieldString(tupleIndex: 0, fieldIndex: 0), let ret = RET(str) else {
       throw TableObjectError.general("No return value")
     }
-    rows.clear()
     return ret
   }
 
@@ -109,6 +113,9 @@ public actor Database {
 
     do {
       let rows = try connection.execute(statement: sqlText)
+      defer {
+        rows.clear()
+      }
       var items = [TYPE]()
 
       for row in 0 ..< rows.numTuples() {
@@ -120,7 +127,6 @@ public actor Database {
         }
         items.append(v)
       }
-      rows.clear()
 
       if transactionConnection == nil {
         ConnectionGroup.shared.release(connection: connection)
