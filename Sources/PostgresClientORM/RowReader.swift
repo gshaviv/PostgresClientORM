@@ -102,11 +102,7 @@ public struct RowDecoder<Key: CodingKey> {
     guard try !row.isNull(key: key, path: prefix) else {
       return nil
     }
-    let str = try row.value(ofType: String.self, forKey: key, path: prefix)
-    guard let data = str.data(using: .utf8) else {
-      return nil
-    }
-    return try? JSONDecoder().decode(T.self, from: data)
+    return try decode(T.self, forKey: key)
   }
 
   public func contains(_ key: Key) -> Bool {
