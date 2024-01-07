@@ -89,8 +89,15 @@ public struct RowDecoder<Key: CodingKey> {
   }
 
   public func decode<T: Decodable & LosslessStringConvertible>(_: T.Type, forKey key: Key) throws -> T {
-    guard let v = try T(row.value(ofType: String.self, forKey: key, path: prefix)) else {
-      throw TableObjectError.general("Can't read value for \(key)")
+    var str = try row.value(ofType: String.self, forKey: key, path: prefix)
+    switch str {
+    case "t": str = "true"
+    case "f": str = "false"
+    default:
+      break
+    }
+    guard let v = T(str) else {
+      throw TableObjectError.general("Can't convert value for \(key.stringValue): \(str)")
     }
     return v
   }
@@ -99,8 +106,15 @@ public struct RowDecoder<Key: CodingKey> {
     guard try !row.isNull(key: key, path: prefix) else {
       return nil
     }
-    guard let v = try T(row.value(ofType: String.self, forKey: key, path: prefix)) else {
-      throw TableObjectError.general("Can't read value for \(key)")
+    var str = try row.value(ofType: String.self, forKey: key, path: prefix)
+    switch str {
+    case "t": str = "true"
+    case "f": str = "false"
+    default:
+      break
+    }
+    guard let v = T(str) else {
+      throw TableObjectError.general("Can't convert value for \(key.stringValue): \(str)")
     }
     return v
   }
