@@ -146,6 +146,22 @@ struct ResultRow {
     }
     return result.getFieldDouble(tupleIndex: row, fieldIndex: idx)
   }
+  
+  func value(ofType _: Bool.Type, forKey key: CodingKey, path prefix: [String] = []) throws -> Bool {
+    let rowKey = (prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")
+    guard let idx = fields[rowKey], let v = result.getFieldBool(tupleIndex: row, fieldIndex: idx) else {
+      throw TableObjectError.general("key not found \(rowKey)")
+    }
+    return v
+  }
+
+  func value(ofType _: Bool?.Type, forKey key: CodingKey, path prefix: [String] = []) throws -> Bool? {
+    let rowKey = (prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")
+    guard let idx = fields[rowKey] else {
+      throw TableObjectError.general("key not found \(rowKey)")
+    }
+    return result.getFieldBool(tupleIndex: row, fieldIndex: idx)
+  }
 
   func contains(key: CodingKey, path prefix: [String] = []) -> Bool {
     fields[(prefix + [key.stringValue]).filter { !$0.isEmpty }.joined(separator: "_")] != nil

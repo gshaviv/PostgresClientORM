@@ -117,6 +117,10 @@ public struct RowDecoder<Key: CodingKey> {
   public func decode(_: String.Type, forKey key: Key) throws -> String {
     try row.value(ofType: String.self, forKey: key, path: prefix)
   }
+  
+  public func decode(_: Bool.Type, forKey key: Key) throws -> Bool {
+    try row.value(ofType: Bool.self, forKey: key, path: prefix)
+  }
 
   public func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
     try row.value(ofType: type, forKey: key, path: prefix)
