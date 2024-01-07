@@ -74,18 +74,25 @@ public struct RowDecoder<Key: CodingKey> {
     return value
   }
 
-  public func decode<T: Decodable>(_: T.Type, forKey key: Key) throws -> T {
+  public func decode<T: Decodable>(_ tp: T.Type, forKey key: Key) throws -> T {
     let str = try row.value(ofType: String.self, forKey: key, path: prefix)
-    if !CharacterSet(charactersIn: str).subtracting(CharacterSet(charactersIn: "0123456789")).isEmpty, !str.hasPrefix("["), !str.hasPrefix("{") {
-      guard let data = "\"\(str)\"".data(using: .utf8) else {
+    if let tpl = tp as? any LosslessStringConvertible.Type {
+      guard let v = tpl.init(str), let vt = v as? T else {
+        throw TableObjectError.general("Can't read value for \(key)")
+      }
+      return vt
+    } else {
+      if !CharacterSet(charactersIn: str).subtracting(CharacterSet(charactersIn: "0123456789.")).isEmpty, !str.hasPrefix("["), !str.hasPrefix("{") {
+        guard let data = "\"\(str)\"".data(using: .utf8) else {
+          throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
+        }
+        return try JSONDecoder().decode(T.self, from: data)
+      }
+      guard let data = str.data(using: .utf8) else {
         throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
       }
       return try JSONDecoder().decode(T.self, from: data)
     }
-    guard let data = str.data(using: .utf8) else {
-      throw TableObjectError.general("Value for key: \(key) -> \(str) cannot be converted to data")
-    }
-    return try JSONDecoder().decode(T.self, from: data)
   }
 
   public func decode<T: Decodable & FieldSubset>(_ type: T.Type, forKey key: Key) throws -> T {
