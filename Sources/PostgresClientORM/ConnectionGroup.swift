@@ -24,11 +24,7 @@ import PerfectPostgreSQL
 /// **DATABASE_NAME**
 ///
 /// **DATABASE_SSL** (use ssl if this enviroment variable evaluates to TRUE.
-actor ConnectionGroup {
-  static var shared = ConnectionGroup()
-
-  private init() {}
-
+enum ConnectionGroup {
   private static var configuration: String {
     if let url = ProcessInfo.processInfo.environment["DATABASE_URL"] {
       return url
@@ -51,39 +47,15 @@ actor ConnectionGroup {
     }
   }
 
-  var all: [PGConnection] = []
-  var available: [PGConnection] = []
-
   /// Obtain a new or existing and available connection
   /// - Returns: PostgresConnection
-  func obtain() throws -> PGConnection {
-    if available.isEmpty {
-      guard all.count < 24 else {
-        throw TableObjectError.general("Too Many pending connections")
-      }
+  static func obtain() throws -> DatabaseConnection {
       let connection = PGConnection()
       let status = connection.connectdb(Self.configuration)
       guard status == .ok else {
         throw TableObjectError.general("Bad connection status: \(status)")
       }
-      all.append(connection)
-      return connection
-    } else {
-      let outgoing = available.removeLast()
-      return outgoing
-    }
-  }
-
-  private func finished(connection: PGConnection) {
-    available.append(connection)
-  }
-
-  /// Releae a previously obtained connection. No more actions can be performed on this connection.
-  /// - Parameter connection: The connection to release
-  nonisolated func release(connection: PGConnection) {
-    Task.detached {
-      await self.finished(connection: connection)
-    }
+      return DatabaseConnection(connection)
   }
 
   /// Get a connection for a block
@@ -91,13 +63,11 @@ actor ConnectionGroup {
   /// The connection is release when the block terminates. This is equivalent to doing ``obtain()`` and ``release(:)`` around the block.
   ///
   /// - Parameter doBlock: The block that is passed the connection.
-  func withConnection(doBlock: (PGConnection) async throws -> Void) async throws {
+  static func withConnection(doBlock: (DatabaseConnection) async throws -> Void) async throws {
     let connection = try obtain()
     do {
       try await doBlock(connection)
-      finished(connection: connection)
     } catch {
-      finished(connection: connection)
       throw error
     }
   }

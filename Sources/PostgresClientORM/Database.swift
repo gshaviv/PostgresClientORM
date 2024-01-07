@@ -17,17 +17,11 @@ public actor Database {
 
   private init() {}
 
-  func getCount(sqlQuery: Query<CountRetrieval>, transactionConnection: PGConnection? = nil) async throws -> Int {
-    let connection: PGConnection = if let transactionConnection {
+  func getCount(sqlQuery: Query<CountRetrieval>, transactionConnection: DatabaseConnection? = nil) async throws -> Int {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
-    }
-
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+      try ConnectionGroup.obtain()
     }
 
     let rows = try connection.execute(statement: sqlQuery.sqlString, params: sqlQuery.bindings)
@@ -45,29 +39,21 @@ public actor Database {
   ///   - sqlQuery: the ``Query`` to execute
   ///   - transactionConnection: if part of transaction, the transaction connection (optional)
   /// - Returns: and array of results, TYPE is deried from the ``Query``
-  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: PGConnection? = nil) async throws -> [TYPE] {
-    let connection: PGConnection = if let transactionConnection {
+  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
+      try ConnectionGroup.obtain()
     }
 
-    do {
       var items = [TYPE]()
       let results = sqlQuery.results(transactionConnection: connection)
       for try await item in results {
         items.append(item)
       }
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+      
       return items
-    } catch {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
-      throw error
-    }
+   
   }
 
   /// Execute a ``Query`` with a RETURNING clause
@@ -76,17 +62,13 @@ public actor Database {
   ///   - returning: The type being returned
   ///   - transaction: optional: if part of a transaction, it's id.
   /// - Returns: an instance of return type
-  public func execute<RET: LosslessStringConvertible>(sqlQuery: Query<some FieldSubset>, returning _: RET.Type, transactionConnection: PGConnection? = nil) async throws -> RET {
-    let connection: PGConnection = if let transactionConnection {
+  public func execute<RET: LosslessStringConvertible>(sqlQuery: Query<some FieldSubset>, returning _: RET.Type, transactionConnection: DatabaseConnection? = nil) async throws -> RET {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
+      try  ConnectionGroup.obtain()
     }
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
-    }
+
 
     let rows = try connection.execute(statement: sqlQuery.sqlString, params: sqlQuery.bindings)
     defer {
@@ -104,14 +86,13 @@ public actor Database {
   ///   - sqlText: the text of the sql query to perform
   ///   - transactionConnection: (Optional)  if participating in a transaction)
   /// - Returns: an array of TYPE
-  public func execute<TYPE: FieldSubset>(decode _: TYPE.Type, _ sqlText: String, transactionConnection: PGConnection? = nil) async throws -> [TYPE] {
-    let connection: PGConnection = if let transactionConnection {
+  public func execute<TYPE: FieldSubset>(decode _: TYPE.Type, _ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
+      try ConnectionGroup.obtain()
     }
 
-    do {
       let rows = try connection.execute(statement: sqlText)
       defer {
         rows.clear()
@@ -128,34 +109,23 @@ public actor Database {
         items.append(v)
       }
 
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
+
       return items
-    } catch {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
-      throw error
-    }
+    
   }
 
   /// Execute an sql text with no return value
   /// - Parameters:
   ///   - sqlText: The SQL text to run
   ///   - transactionConnection: (optional) transaction connection
-  public func execute(_ sqlText: String, transactionConnection: PGConnection? = nil) async throws {
-    let connection: PGConnection = if let transactionConnection {
+  public func execute(_ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws {
+    let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try await ConnectionGroup.shared.obtain()
+      try  ConnectionGroup.obtain()
     }
 
-    defer {
-      if transactionConnection == nil {
-        ConnectionGroup.shared.release(connection: connection)
-      }
-    }
+   
 
     let ret = try connection.execute(statement: sqlText)
     ret.clear()
@@ -164,8 +134,8 @@ public actor Database {
   /// Perform database operations in a transaction
   /// - Parameter transactionBlock: The transaction block receives a transactionConnection parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
   /// - NOTE: **Important** remeber to include the transaction connection to the  database operations in the block, not doing so will cause the action to be performed outside the transaction.
-  public func transaction(file _: String = #file, line _: Int = #line, _ transactionBlock: @escaping (_ connecction: PGConnection) async throws -> Void) async throws {
-    let connection = try await ConnectionGroup.shared.obtain()
+  public func transaction(file _: String = #file, line _: Int = #line, _ transactionBlock: @escaping (_ connecction: DatabaseConnection) async throws -> Void) async throws {
+    let connection = try ConnectionGroup.obtain()
     do {
       try connection.beginTransaction()
       do {
@@ -174,26 +144,23 @@ public actor Database {
       } catch {
         try connection.rollbackTransaction()
       }
-
-      ConnectionGroup.shared.release(connection: connection)
     } catch {
       try connection.rollbackTransaction()
-      ConnectionGroup.shared.release(connection: connection)
       throw error
     }
   }
 }
 
-public extension PGConnection {
+public extension DatabaseConnection {
   func beginTransaction() throws {
-    try execute(statement: "begin transaction")
+    try connection.execute(statement: "begin transaction")
   }
 
   func commitTransaction() throws {
-    try execute(statement: "commit")
+    try connection.execute(statement: "commit")
   }
 
   func rollbackTransaction() throws {
-    try execute(statement: "rollback")
+    try connection.execute(statement: "rollback")
   }
 }

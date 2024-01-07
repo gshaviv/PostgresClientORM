@@ -13,9 +13,9 @@ public struct QueryResults<Type: FieldSubset>: AsyncSequence {
   public typealias AsyncIterator = QueryResultIterator<Type>
   public typealias Element = Type
   private var query: Query<Type>
-  private var connection: PGConnection?
+  private var connection: DatabaseConnection?
 
-  init(query: Query<Type>, connection: PGConnection? = nil) {
+  init(query: Query<Type>, connection: DatabaseConnection? = nil) {
     self.query = query
     self.connection = connection
   }
@@ -28,13 +28,13 @@ public struct QueryResults<Type: FieldSubset>: AsyncSequence {
 @_documentation(visibility: private)
 public class QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
   private var query: Query<T>
-  private var connection: PGConnection?
+  private var connection: DatabaseConnection?
   private var result: PGResult?
   private var iterator: Range<Int>.Iterator?
   private var releaseConnection: Bool
   private var resultRow: ResultRow?
 
-  init(query: Query<T>, connection: PGConnection?) {
+  init(query: Query<T>, connection: DatabaseConnection?) {
     self.query = query
     self.connection = connection
     releaseConnection = connection == nil
@@ -42,18 +42,15 @@ public class QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
 
   deinit {
     result?.clear()
-    if let connection, releaseConnection {
-      ConnectionGroup.shared.release(connection: connection)
-    }
   }
 
   public func next() async throws -> T? {
     if iterator == nil {
-      let resultConnection: PGConnection
+      let resultConnection: DatabaseConnection
       if let connection {
         resultConnection = connection
       } else {
-        resultConnection = try await ConnectionGroup.shared.obtain()
+        resultConnection = try ConnectionGroup.obtain()
         connection = resultConnection
       }
       let result = try resultConnection.execute(statement: query.sqlString, params: query.bindings)

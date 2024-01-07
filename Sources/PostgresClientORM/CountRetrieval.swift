@@ -35,7 +35,7 @@ public struct CountRetrieval: TableObject {
 }
 
 public extension Query<CountRetrieval> {
-  func execute(transactionConnection: PGConnection? = nil) async throws -> Int {
+  func execute(transactionConnection: DatabaseConnection? = nil) async throws -> Int {
     try await Database.handler.getCount(sqlQuery: self, transactionConnection: transactionConnection)
   }
 }

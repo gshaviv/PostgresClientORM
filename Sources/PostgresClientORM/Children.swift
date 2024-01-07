@@ -93,7 +93,7 @@ public class Children<Child: TableObject>: Sequence, Codable {
   ///
   ///   - See Also:
   ///    ``TableObect.loadChildren(_:)``
-  public func load(parentId: any LosslessStringConvertible, transactionConnection: PGConnection? = nil) async throws {
+  public func load(parentId: any LosslessStringConvertible, transactionConnection: DatabaseConnection? = nil) async throws {
     var query = try Child.select()
       .where {
         Child.column(self.referencingColumn) == parentId
@@ -171,7 +171,7 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
   ///
   /// - Parameter transactionConnection: if part of a transaction
   /// - Returns: the parent object
-  @discardableResult public func get(transactionConnection: PGConnection? = nil) async throws -> DAD {
+  @discardableResult public func get(transactionConnection: DatabaseConnection? = nil) async throws -> DAD {
     if let value {
       return value
     }
@@ -201,7 +201,7 @@ public extension TableObject {
   ///   - keypath: keypath of property of type ``Children``
   ///   - transaction: id of transaction if in a transaction
   /// - Returns: the objects loaded, equal to va;ues
-  @discardableResult func loadChildren<ChildType>(_ keypath: KeyPath<Self, Children<ChildType>>, transactionConnection: PGConnection? = nil) async throws -> [ChildType] {
+  @discardableResult func loadChildren<ChildType>(_ keypath: KeyPath<Self, Children<ChildType>>, transactionConnection: DatabaseConnection? = nil) async throws -> [ChildType] {
     guard let id else {
       throw TableObjectError.general("id is nil")
     }
