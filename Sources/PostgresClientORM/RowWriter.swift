@@ -132,6 +132,19 @@ public struct RowEncoder<Key: CodingKey> {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
+  
+  public func encode(_ value: Bool, forKey key: Key) throws {
+    writer.values.append(value)
+    writer.variableNames.append(variableName(forKey: key))
+  }
+  
+  public func encode<T>(_ value: Optional<T>, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      try encode(NULL, forKey: key)
+    }
+  }
 
   public func encode(_ value: some Encodable, forKey key: Key) throws {
     guard let str = try String(data: JSONEncoder().encode(value), encoding: .utf8) else {
