@@ -246,11 +246,16 @@ public struct RowEncoder<Key: CodingKey> {
   }
 
   public func encode(_ value: some Encodable, forKey key: Key) throws {
-    guard let str = try String(data: JSONEncoder().encode(value), encoding: .utf8) else {
-      throw TableObjectError.general("Failed to encode value for key: \(key.stringValue)")
+    if let value = value as? LosslessStringConvertible {
+      writer.values.append(value.description)
+      writer.variableNames.append(variableName(forKey: key))
+    } else {
+      guard let str = try String(data: JSONEncoder().encode(value), encoding: .utf8) else {
+        throw TableObjectError.general("Failed to encode value for key: \(key.stringValue)")
+      }
+      writer.values.append(str)
+      writer.variableNames.append(variableName(forKey: key))
     }
-    writer.values.append(str)
-    writer.variableNames.append(variableName(forKey: key))
   }
 
   public func encode<T: RawRepresentable>(_ value: T, forKey key: Key) throws where T.RawValue == Int {
@@ -304,7 +309,6 @@ public struct RowEncoder<Key: CodingKey> {
       writer.variableNames.append(variableName(forKey: key))
     }
   }
-
   
   public func encode(_ value: (some Encodable)?, forKey key: Key) throws {
     if let value {
