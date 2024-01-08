@@ -82,10 +82,28 @@ public struct RowEncoder<Key: CodingKey> {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
+  
+  public func encode(_ value: Int?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode(_ value: Int8, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
+  }
+  
+  public func encode(_ value: Int8?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
   }
 
   public func encode(_ value: Int16, forKey key: Key) throws {
@@ -93,39 +111,110 @@ public struct RowEncoder<Key: CodingKey> {
     writer.variableNames.append(variableName(forKey: key))
   }
 
+  public func encode(_ value: Int16?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
   public func encode(_ value: Int32, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
+  }
+  
+  public func encode(_ value: Int32?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
   }
 
   public func encode(_ value: Int64, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
+  
+  public func encode(_ value: Int64?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode(_ value: UInt, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
+  }
+  
+  public func encode(_ value: UInt?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
   }
 
   public func encode(_ value: UInt8, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
+  
+  public func encode(_ value: UInt8?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode(_ value: UInt16, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
+  }
+  
+  public func encode(_ value: UInt16?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
   }
 
   public func encode(_ value: UInt32, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
+  
+  public func encode(_ value: UInt32?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode(_ value: UInt64, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
+  }
+  
+  public func encode(_ value: UInt64?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
   }
 
   public func encode(_ value: String, forKey key: Key) throws {
@@ -133,16 +222,26 @@ public struct RowEncoder<Key: CodingKey> {
     writer.variableNames.append(variableName(forKey: key))
   }
   
+  public func encode(_ value: String?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
+  
   public func encode(_ value: Bool, forKey key: Key) throws {
     writer.values.append(value)
     writer.variableNames.append(variableName(forKey: key))
   }
   
-  public func encode<T>(_ value: Optional<T>, forKey key: Key) throws {
+  public func encode(_ value: Bool?, forKey key: Key) throws {
     if let value {
       try encode(value, forKey: key)
     } else {
-      try encode(NULL, forKey: key)
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
     }
   }
 
@@ -158,63 +257,63 @@ public struct RowEncoder<Key: CodingKey> {
     try encode(value.rawValue, forKey: key)
   }
 
-//  public func encode<T: RawRepresentable>(_ value: T?, forKey key: Key) throws where T.RawValue == Int {
-//    if let value {
-//      try encode(value.rawValue, forKey: key)
-//    } else {
-//      writer.values.append(NULL)
-//      writer.variableNames.append(variableName(forKey: key))
-//    }
-//  }
+  public func encode<T: RawRepresentable>(_ value: T?, forKey key: Key) throws where T.RawValue == Int {
+    if let value {
+      try encode(value.rawValue, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode<T: RawRepresentable>(_ value: T, forKey key: Key) throws where T.RawValue == String {
     try encode(value.rawValue, forKey: key)
   }
 
-//  public func encode<T: RawRepresentable>(_ value: T?, forKey key: Key) throws where T.RawValue == String {
-//    if let value {
-//      try encode(value.rawValue, forKey: key)
-//    } else {
-//      writer.values.append(NULL)
-//      writer.variableNames.append(variableName(forKey: key))
-//    }
-//  }
+  public func encode<T: RawRepresentable>(_ value: T?, forKey key: Key) throws where T.RawValue == String {
+    if let value {
+      try encode(value.rawValue, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode<T: RawRepresentable & Encodable>(_ value: T, forKey key: Key) throws where T.RawValue == Int {
     try encode(value.rawValue, forKey: key)
   }
 
-//  public func encode<T: RawRepresentable & Encodable>(_ value: T?, forKey key: Key) throws where T.RawValue == Int {
-//    if let value {
-//      try encode(value.rawValue, forKey: key)
-//    } else {
-//      writer.values.append(NULL)
-//      writer.variableNames.append(variableName(forKey: key))
-//    }
-//  }
+  public func encode<T: RawRepresentable & Encodable>(_ value: T?, forKey key: Key) throws where T.RawValue == Int {
+    if let value {
+      try encode(value.rawValue, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode<T: RawRepresentable & Encodable>(_ value: T, forKey key: Key) throws where T.RawValue == String {
     try encode(value.rawValue, forKey: key)
   }
 
-//  public func encode<T: RawRepresentable & Encodable>(_ value: T?, forKey key: Key) throws where T.RawValue == String {
-//    if let value {
-//      try encode(value.rawValue, forKey: key)
-//    } else {
-//      writer.values.append(NULL)
-//      writer.variableNames.append(variableName(forKey: key))
-//    }
-//  }
+  public func encode<T: RawRepresentable & Encodable>(_ value: T?, forKey key: Key) throws where T.RawValue == String {
+    if let value {
+      try encode(value.rawValue, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   
-//  public func encode(_ value: (some Encodable)?, forKey key: Key) throws {
-//    if let value {
-//      try encode(value, forKey: key)
-//    } else {
-//      writer.values.append(NULL)
-//      writer.variableNames.append(variableName(forKey: key))
-//    }
-//  }
+  public func encode(_ value: (some Encodable)?, forKey key: Key) throws {
+    if let value {
+      try encode(value, forKey: key)
+    } else {
+      writer.values.append(NULL)
+      writer.variableNames.append(variableName(forKey: key))
+    }
+  }
 
   public func encode<T: FieldSubset & Encodable>(_ value: T, forKey key: Key) throws {
     let subWriter = RowWriter(prefix: prefix + [key.stringValue], parent: writer)
