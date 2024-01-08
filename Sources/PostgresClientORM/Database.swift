@@ -21,7 +21,7 @@ public actor Database {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try ConnectionGroup.obtain()
+      try DatabaseConnector.connect()
     }
 
     let rows = try connection.execute(statement: sqlQuery.sqlString, params: sqlQuery.bindings)
@@ -43,7 +43,7 @@ public actor Database {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try ConnectionGroup.obtain()
+      try DatabaseConnector.connect()
     }
 
       var items = [TYPE]()
@@ -66,7 +66,7 @@ public actor Database {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try  ConnectionGroup.obtain()
+      try  DatabaseConnector.connect()
     }
 
 
@@ -90,7 +90,7 @@ public actor Database {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try ConnectionGroup.obtain()
+      try DatabaseConnector.connect()
     }
 
       let rows = try connection.execute(statement: sqlText)
@@ -122,7 +122,7 @@ public actor Database {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
-      try  ConnectionGroup.obtain()
+      try  DatabaseConnector.connect()
     }
 
    
@@ -135,7 +135,7 @@ public actor Database {
   /// - Parameter transactionBlock: The transaction block receives a transactionConnection parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
   /// - NOTE: **Important** remeber to include the transaction connection to the  database operations in the block, not doing so will cause the action to be performed outside the transaction.
   public func transaction(file _: String = #file, line _: Int = #line, _ transactionBlock: @escaping (_ connecction: DatabaseConnection) async throws -> Void) async throws {
-    let connection = try ConnectionGroup.obtain()
+    let connection = try DatabaseConnector.connect()
     do {
       try connection.beginTransaction()
       do {

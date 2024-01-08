@@ -24,7 +24,7 @@ import PerfectPostgreSQL
 /// **DATABASE_NAME**
 ///
 /// **DATABASE_SSL** (use ssl if this enviroment variable evaluates to TRUE.
-enum ConnectionGroup {
+public enum DatabaseConnector {
   private static var configuration: String {
     if let url = ProcessInfo.processInfo.environment["DATABASE_URL"] {
       return url
@@ -49,7 +49,7 @@ enum ConnectionGroup {
 
   /// Obtain a new or existing and available connection
   /// - Returns: PostgresConnection
-  static func obtain() throws -> DatabaseConnection {
+  static func connect() throws -> DatabaseConnection {
       let connection = PGConnection()
       let status = connection.connectdb(Self.configuration)
       guard status == .ok else {
@@ -63,10 +63,10 @@ enum ConnectionGroup {
   /// The connection is release when the block terminates. This is equivalent to doing ``obtain()`` and ``release(:)`` around the block.
   ///
   /// - Parameter doBlock: The block that is passed the connection.
-  static func withConnection(doBlock: (DatabaseConnection) async throws -> Void) async throws {
-    let connection = try obtain()
+  static func withConnection<T>(doBlock: (DatabaseConnection) async throws -> T) async throws -> T {
+    let connection = try connect()
     do {
-      try await doBlock(connection)
+      return try await doBlock(connection)
     } catch {
       throw error
     }

@@ -50,7 +50,7 @@ public class QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
       if let connection {
         resultConnection = connection
       } else {
-        resultConnection = try ConnectionGroup.obtain()
+        resultConnection = try DatabaseConnector.connect()
         connection = resultConnection
       }
       let result = try resultConnection.execute(statement: query.sqlString, params: query.bindings)
