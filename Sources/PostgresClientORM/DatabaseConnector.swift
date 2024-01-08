@@ -63,7 +63,7 @@ public enum DatabaseConnector {
   /// The connection is release when the block terminates. This is equivalent to doing ``obtain()`` and ``release(:)`` around the block.
   ///
   /// - Parameter doBlock: The block that is passed the connection.
-  static func withConnection<T>(doBlock: (DatabaseConnection) async throws -> T) async throws -> T {
+  static public func withConnection<T>(doBlock: (DatabaseConnection) async throws -> T) async throws -> T {
     let connection = try connect()
     do {
       return try await doBlock(connection)
