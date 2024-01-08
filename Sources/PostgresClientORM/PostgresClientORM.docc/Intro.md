@@ -170,9 +170,9 @@ It is possible to perform database operations in a database transaction. To perf
 try await Database.handler.transaction { tid in
     // perform transaction operations
     // remember to pass transaction connection to any database operation
-    var city = try await Weather.fetch(id: city_id, transactionConnection: tid)
+    var city = try await Weather.fetch(id: city_id, connection: tid)
     city.temp.lo = -10
-    try await city.save(transactionConnection: tid)
+    try await city.save(connection: tid)
 }
 ```
 

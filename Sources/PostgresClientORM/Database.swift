@@ -17,7 +17,7 @@ public actor Database {
 
   private init() {}
 
-  func getCount(sqlQuery: Query<CountRetrieval>, transactionConnection: DatabaseConnection? = nil) async throws -> Int {
+  func getCount(sqlQuery: Query<CountRetrieval>, connection transactionConnection: DatabaseConnection? = nil) async throws -> Int {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
@@ -37,9 +37,9 @@ public actor Database {
   /// Execute a ``Query``
   /// - Parameters:
   ///   - sqlQuery: the ``Query`` to execute
-  ///   - transactionConnection: if part of transaction, the transaction connection (optional)
+  ///   - connection: if part of transaction, the transaction connection (optional)
   /// - Returns: and array of results, TYPE is deried from the ``Query``
-  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
+  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, connection transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
@@ -47,7 +47,7 @@ public actor Database {
     }
 
       var items = [TYPE]()
-      let results = sqlQuery.results(transactionConnection: connection)
+      let results = sqlQuery.results(connection: connection)
       for try await item in results {
         items.append(item)
       }
@@ -62,7 +62,7 @@ public actor Database {
   ///   - returning: The type being returned
   ///   - transaction: optional: if part of a transaction, it's id.
   /// - Returns: an instance of return type
-  public func execute<RET: LosslessStringConvertible>(sqlQuery: Query<some FieldSubset>, returning _: RET.Type, transactionConnection: DatabaseConnection? = nil) async throws -> RET {
+  public func execute<RET: LosslessStringConvertible>(sqlQuery: Query<some FieldSubset>, returning _: RET.Type, connection transactionConnection: DatabaseConnection? = nil) async throws -> RET {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
@@ -84,9 +84,9 @@ public actor Database {
   /// - Parameters:
   ///   - decode: The type of result to return
   ///   - sqlText: the text of the sql query to perform
-  ///   - transactionConnection: (Optional)  if participating in a transaction)
+  ///   - connection: (Optional)  if participating in a transaction)
   /// - Returns: an array of TYPE
-  public func execute<TYPE: FieldSubset>(decode _: TYPE.Type, _ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
+  public func execute<TYPE: FieldSubset>(decode _: TYPE.Type, _ sqlText: String, connection transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
@@ -117,8 +117,8 @@ public actor Database {
   /// Execute an sql text with no return value
   /// - Parameters:
   ///   - sqlText: The SQL text to run
-  ///   - transactionConnection: (optional) transaction connection
-  public func execute(_ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws {
+  ///   - connection: (optional) transaction connection
+  public func execute(_ sqlText: String, connection transactionConnection: DatabaseConnection? = nil) async throws {
     let connection: DatabaseConnection = if let transactionConnection {
       transactionConnection
     } else {
