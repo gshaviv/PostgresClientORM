@@ -152,15 +152,15 @@ public struct RowDecoder<Key: CodingKey> {
     try row.value(ofType: Bool.self, forKey: key, path: prefix)
   }
    
-//  public func  decode(_: Date.Type, forKey key: Key) throws -> Date {
-//    let str = try row.value(ofType: String.self, forKey: key)
-//    let formatter = DateFormatter()
-//    formatter.dateFormat = "yyyy-MM-dd HH:mm:ssZ"
-//    guard let d = formatter.date(from: str) else {
-//      throw TableObjectError.general("Can't convert string \"\(str)\" to date")
-//    }
-//    return d
-//  }
+  public func  decode(_: Date.Type, forKey key: Key) throws -> Date {
+    let str = try row.value(ofType: String.self, forKey: key)
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd HH:mm:ssZ"
+    guard let d = formatter.date(from: str) else {
+      throw TableObjectError.general("Can't convert string \"\(str)\" to date")
+    }
+    return d
+  }
 
   public func decode(_: Double.Type, forKey key: Key) throws -> Double {
     try row.value(ofType: Double.self, forKey: key, path: prefix)
