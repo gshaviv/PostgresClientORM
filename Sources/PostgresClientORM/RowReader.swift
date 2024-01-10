@@ -161,6 +161,13 @@ public struct RowDecoder<Key: CodingKey> {
     }
     return d
   }
+  
+  public func  decode(_ value: Date?.Type, forKey key: Key) throws -> Date? {
+    guard try !row.isNull(key: key, path: prefix) else {
+      return nil
+    }
+    return try decode(Date.self, forKey: key)
+  }
 
   public func decode(_: Double.Type, forKey key: Key) throws -> Double {
     try row.value(ofType: Double.self, forKey: key, path: prefix)
