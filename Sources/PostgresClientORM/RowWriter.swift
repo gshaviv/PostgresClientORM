@@ -180,6 +180,14 @@ public struct RowEncoder<Key: CodingKey> {
     writer.variableNames.append(variableName(forKey: key))
   }
   
+  public func encode(_ value: Date, forKey key: Key) throws {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd HH:mm:ssZ"
+    let str = formatter.string(from: value)
+    writer.values.append(str)
+    writer.variableNames.append(variableName(forKey: key))
+  }
+  
   public func encode(_ value: UInt16?, forKey key: Key) throws {
     if let value {
       try encode(value, forKey: key)
