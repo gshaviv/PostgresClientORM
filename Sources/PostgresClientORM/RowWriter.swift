@@ -68,6 +68,13 @@ class RowWriter {
 public struct RowEncoder<Key: CodingKey> {
   private let prefix: [String]
   private let writer: RowWriter
+  private var jsonEncoder: JSONEncoder = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd HH:mm:ssZ"
+    let enc = JSONEncoder()
+    enc.dateEncodingStrategy = .formatted(formatter)
+    return enc
+  }()
 
   init(prefix: [String] = [], writer: RowWriter) {
     self.prefix = prefix
@@ -258,7 +265,7 @@ public struct RowEncoder<Key: CodingKey> {
       writer.values.append(value.description)
       writer.variableNames.append(variableName(forKey: key))
     } else {
-      guard let str = try String(data: JSONEncoder().encode(value), encoding: .utf8) else {
+      guard let str = try String(data: jsonEncoder.encode(value), encoding: .utf8) else {
         throw TableObjectError.general("Failed to encode value for key: \(key.stringValue)")
       }
       writer.values.append(str)
