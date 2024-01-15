@@ -73,10 +73,10 @@ public class DatabaseConnection {
 ///
 /// **DATABASE_SSL** (use ssl if this enviroment variable evaluates to TRUE.
 public actor DatabaseConnector {
-  static var shared = DatabaseConnector()
-  
+  public static var shared = DatabaseConnector()
+
   private init() {}
-  
+
   private static var configuration: PostgresConnection.Configuration {
     get throws {
       if let url = ProcessInfo.processInfo.environment["DATABASE_URL"] {
@@ -94,7 +94,7 @@ public actor DatabaseConnector {
 
   var all: [PostgresConnection] = []
   var available: [PostgresConnection] = []
-  
+
   /// Obtain a new or existing and available connection
   /// - Returns: PostgresConnection
   public func getConnection() async throws -> DatabaseConnection {
@@ -114,7 +114,7 @@ public actor DatabaseConnector {
   private func finished(connection: PostgresConnection) {
     available.append(connection)
   }
-  
+
   /// Releae a previously obtained connection. No more actions can be performed on this connection.
   /// - Parameter connection: The connection to release
   nonisolated func release(connection: PostgresConnection) {
@@ -122,7 +122,7 @@ public actor DatabaseConnector {
       await self.finished(connection: connection)
     }
   }
-  
+
   /// Get a connection for a block
   ///
   /// The connection is release when the block terminates. This is equivalent to doing ``obtain()`` and ``release(:)`` around the block.
