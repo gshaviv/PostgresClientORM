@@ -17,14 +17,14 @@ public actor Database {
   
   private init() {}
   
-  func getCount(sqlQuery: Query<CountRetrieval>, transactionConnection: DatabaseConnection? = nil) async throws -> Int {
-    let connection: DatabaseConnection = if let transactionConnection {
-      transactionConnection
+  func getCount(sqlQuery: Query<CountRetrieval>, connection dbCon: DatabaseConnection? = nil) async throws -> Int {
+    let connection: DatabaseConnection = if let dbCon {
+      dbCon
     } else {
       try await DatabaseConnector.shared.getConnection()
     }
     
-    let rows = try await (transactionConnection ?? connection).query(sqlQuery.postgresQuery, logger: connection.logger)
+    let rows = try await connection.query(sqlQuery.postgresQuery, logger: connection.logger)
     for try await count in rows.decode(Int.self) {
       return count
     }
@@ -36,15 +36,15 @@ public actor Database {
   ///   - sqlQuery: the ``Query`` to execute
   ///   - transactionConnection: if part of transaction, the transaction connection (optional)
   /// - Returns: and array of results, TYPE is deried from the ``Query``
-  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
-    let connection: DatabaseConnection = if let transactionConnection {
-      transactionConnection
+  public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, connection dbCon: DatabaseConnection? = nil) async throws -> [TYPE] {
+    let connection: DatabaseConnection = if let dbCon {
+      dbCon
     } else {
       try await DatabaseConnector.shared.getConnection()
     }
     
     var items = [TYPE]()
-    let results = sqlQuery.results(transactionConnection: connection)
+    let results = sqlQuery.results(connection: connection)
     for try await item in results {
       items.append(item)
     }
@@ -57,9 +57,9 @@ public actor Database {
   ///   - returning: The type being returned
   ///   - transaction: optional: if part of a transaction, it's id.
   /// - Returns: an instance of return type
-  public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, transactionConnection: DatabaseConnection? = nil) async throws -> RET {
-    let connection: DatabaseConnection = if let transactionConnection {
-      transactionConnection
+  public func execute<RET: PostgresDecodable>(sqlQuery: Query<some FieldSubset>, returning: RET.Type, connection dbCon: DatabaseConnection? = nil) async throws -> RET {
+    let connection: DatabaseConnection = if let dbCon {
+      dbCon
     } else {
       try await DatabaseConnector.shared.getConnection()
     }
@@ -78,9 +78,9 @@ public actor Database {
   ///   - sqlText: the text of the sql query to perform
   ///   - transactionConnection: (Optional)  if participating in a transaction)
   /// - Returns: an array of TYPE
-  public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws -> [TYPE] {
-    let connection: DatabaseConnection = if let transactionConnection {
-      transactionConnection
+  public func execute<TYPE: FieldSubset>(decode: TYPE.Type, _ sqlText: String, connection dbCon: DatabaseConnection? = nil) async throws -> [TYPE] {
+    let connection: DatabaseConnection = if let dbCon {
+      dbCon
     } else {
       try await DatabaseConnector.shared.getConnection()
     }
@@ -107,9 +107,9 @@ public actor Database {
   /// - Parameters:
   ///   - sqlText: The SQL text to run
   ///   - transactionConnection: (optional) transaction connection
-  public func execute(_ sqlText: String, transactionConnection: DatabaseConnection? = nil) async throws {
-    let connection: DatabaseConnection = if let transactionConnection {
-      transactionConnection
+  public func execute(_ sqlText: String, connection dbCon: DatabaseConnection? = nil) async throws {
+    let connection: DatabaseConnection = if let dbCon {
+      dbCon
     } else {
       try await DatabaseConnector.shared.getConnection()
     }
@@ -122,7 +122,7 @@ public actor Database {
   /// Perform database operations in a transaction
   /// - Parameter transactionBlock: The transaction block receives a transactionConnection parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
   /// - NOTE: **Important** remeber to include the transaction connection to the  database operations in the block, not doing so will cause the action to be performed outside the transaction.
-  public func transaction(file: String = #file, line: Int = #line, _ transactionBlock: @escaping (_ connecction: DatabaseConnection) async throws -> Void) async throws {
+  public func transaction(file: String = #file, line: Int = #line, _ transactionBlock: @escaping (_ connection: DatabaseConnection) async throws -> Void) async throws {
     let connection = try await DatabaseConnector.shared.getConnection()
     try await connection.beginTransaction()
     do {
