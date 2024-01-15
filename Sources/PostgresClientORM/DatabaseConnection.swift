@@ -72,7 +72,7 @@ public class DatabaseConnection {
 /// **DATABASE_NAME**
 ///
 /// **DATABASE_SSL** (use ssl if this enviroment variable evaluates to TRUE.
-actor DatabaseConnector {
+public actor DatabaseConnector {
   static var shared = DatabaseConnector()
   
   private init() {}
