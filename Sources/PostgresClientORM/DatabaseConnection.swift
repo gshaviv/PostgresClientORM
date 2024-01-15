@@ -38,16 +38,7 @@ public class DatabaseConnection {
   }
 
   deinit {
-    let c = connection
-      do {
-        try c.close().wait()
-      } catch let error as PSQLError {
-        PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
-      } catch let error as PostgresError {
-        PostgresClientORM.logger.error("** Error while closing: \(String(reflecting: error))")
-      } catch {
-        PostgresClientORM.logger.error("** Error while closing: \(type(of: error))")
-      }
+    DatabaseConnector.shared.release(connection: connection)
   }
 
   @inlinable @discardableResult
@@ -81,7 +72,11 @@ public class DatabaseConnection {
 /// **DATABASE_NAME**
 ///
 /// **DATABASE_SSL** (use ssl if this enviroment variable evaluates to TRUE.
-enum Connection {
+actor DatabaseConnector {
+  static var shared = DatabaseConnector()
+  
+  private init() {}
+  
   private static var configuration: PostgresConnection.Configuration {
     get throws {
       if let url = ProcessInfo.processInfo.environment["DATABASE_URL"] {
@@ -97,12 +92,49 @@ enum Connection {
     }
   }
 
-  static var serial = 0
+  var all: [PostgresConnection] = []
+  var available: [PostgresConnection] = []
+  
   /// Obtain a new or existing and available connection
   /// - Returns: PostgresConnection
-  static func obtain() async throws -> DatabaseConnection {
-    serial += 1
-    return try await DatabaseConnection(connection: PostgresConnection.connect(configuration: configuration, id: serial, logger: PostgresClientORM.logger))
+  public func getConnection() async throws -> DatabaseConnection {
+    if available.isEmpty {
+      guard all.count < 12 else {
+        throw TableObjectError.general("Too Many pending connections")
+      }
+      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.logger)
+      all.append(connection)
+      return DatabaseConnection(connection: connection)
+    } else {
+      let outgoing = available.removeLast()
+      return DatabaseConnection(connection: outgoing)
+    }
+  }
+
+  private func finished(connection: PostgresConnection) {
+    available.append(connection)
+  }
+  
+  /// Releae a previously obtained connection. No more actions can be performed on this connection.
+  /// - Parameter connection: The connection to release
+  nonisolated func release(connection: PostgresConnection) {
+    Task.detached {
+      await self.finished(connection: connection)
+    }
+  }
+  
+  /// Get a connection for a block
+  ///
+  /// The connection is release when the block terminates. This is equivalent to doing ``obtain()`` and ``release(:)`` around the block.
+  ///
+  /// - Parameter doBlock: The block that is passed the connection.
+  public func withConnection<T>(doBlock: (DatabaseConnection) async throws -> T) async throws -> T {
+    let connection = try await getConnection()
+    do {
+      return try await doBlock(connection)
+    } catch {
+      throw error
+    }
   }
 }
 
