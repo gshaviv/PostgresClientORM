@@ -37,14 +37,8 @@ public actor Database {
   ///   - transactionConnection: if part of transaction, the transaction connection (optional)
   /// - Returns: and array of results, TYPE is deried from the ``Query``
   public func execute<TYPE: FieldSubset>(sqlQuery: Query<TYPE>, connection dbCon: DatabaseConnection? = nil) async throws -> [TYPE] {
-    let connection: DatabaseConnection = if let dbCon {
-      dbCon
-    } else {
-      try await DatabaseConnector.shared.getConnection()
-    }
-    
     var items = [TYPE]()
-    let results = sqlQuery.results(connection: connection)
+    let results = sqlQuery.results(connection: dbCon)
     for try await item in results {
       items.append(item)
     }

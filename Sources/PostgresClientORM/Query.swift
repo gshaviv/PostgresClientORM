@@ -157,7 +157,7 @@ public struct Query<TYPE: FieldSubset> {
     QueryResults(query: self)
   }
 
-  public func results(connection: DatabaseConnection) -> QueryResults<TYPE> {
+  public func results(connection: DatabaseConnection?) -> QueryResults<TYPE> {
     QueryResults(query: self, connection: connection)
   }
 }

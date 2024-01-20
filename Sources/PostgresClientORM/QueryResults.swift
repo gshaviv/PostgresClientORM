@@ -31,12 +31,10 @@ public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
   private var connection: DatabaseConnection?
   private var result: PostgresRowSequence?
   private var iterator: PostgresRowSequence.AsyncIterator?
-  private var releaseConnectin: Bool
 
   init(query: PostgresQuery, connection: DatabaseConnection?) {
     self.query = query
     self.connection = connection
-    releaseConnectin = connection == nil
   }
 
   public mutating func next() async throws -> T? {
@@ -54,6 +52,7 @@ public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
     }
 
     guard let row = try await iterator?.next() else {
+      connection = nil
       return nil
     }
     let v = try RowReader(row: row).decode(T.self)
