@@ -13,7 +13,7 @@ import Combine
 public enum PostgresClientORM {
   public static var logger: Logger = .init(label: "Postgres")
   public static var eventLoop = PostgresConnection.defaultEventLoopGroup.any()
-
+  
   /// Configure a PostgresClientORM
   ///
   /// - Parameters:
@@ -33,14 +33,17 @@ public enum PostgresClientORM {
 
 public class DatabaseConnection {
   let connection: PostgresConnection
-  static var notify = PassthroughSubject<Void, Never>()
+  public static var notify = PassthroughSubject<Void, Never>()
+  public static var response = PassthroughSubject<String, Never>()
   var lastQuery: String = ""
   var cancel: AnyCancellable?
   
   public init(connection: PostgresConnection) {
     self.connection = connection
     cancel = Self.notify.sink { [weak self] in
-      self?.logger.info("- Last query: \(self?.lastQuery ?? "")")
+      guard let self else { return }
+      Self.response.send(self.lastQuery)
+      self.logger.info("- Last query: \(self.lastQuery)")
     }
   }
 
