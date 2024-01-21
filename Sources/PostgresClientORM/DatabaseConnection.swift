@@ -8,7 +8,6 @@
 import Foundation
 import Logging
 import PostgresNIO
-import Combine
 
 public enum PostgresClientORM {
   public static var logger: Logger = .init(label: "Postgres")
@@ -32,23 +31,34 @@ public enum PostgresClientORM {
 }
 
 public class DatabaseConnection {
+  static var notificiations = [Shim]()
+  struct Shim {
+    weak var connection: DatabaseConnection?
+  }
   let connection: PostgresConnection
-  public static var notify = PassthroughSubject<Void, Never>()
-  public static var response = PassthroughSubject<String, Never>()
   var lastQuery: String = ""
-  var cancel: AnyCancellable?
   
   public init(connection: PostgresConnection) {
     self.connection = connection
-    cancel = Self.notify.sink { [weak self] in
-      guard let self else { return }
-      Self.response.send(self.lastQuery)
-      self.logger.info("- Last query: \(self.lastQuery)")
+    Self.notificiations.removeAll(where: { $0.connection == nil })
+    Self.notificiations.append(Shim(connection: self))
+  }
+  
+  public static func listAlive() -> String {
+    notificiations.removeAll(where: { $0.connection == nil })
+    if notificiations.isEmpty {
+      return "- None -"
     }
+    var ret = ["Last query of live connections:"]
+    for notificiation in notificiations {
+      if let l = notificiation.connection?.lastQuery {
+        ret.append(l)
+      }
+    }
+    return ret.joined(separator: "\n")
   }
 
   deinit {
-    cancel?.cancel()
     DatabaseConnector.shared.release(connection: connection)
   }
 
@@ -112,7 +122,6 @@ public actor DatabaseConnector {
   public func getConnection() async throws -> DatabaseConnection {
     if available.isEmpty {
       guard all.count < 12 else {
-        DatabaseConnection.notify.send()
         throw TableObjectError.general("Too Many pending connections")
       }
       let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.logger)
