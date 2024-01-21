@@ -8,6 +8,7 @@
 import Foundation
 import Logging
 import PostgresNIO
+import Combine
 
 public enum PostgresClientORM {
   public static var logger: Logger = .init(label: "Postgres")
@@ -31,24 +32,32 @@ public enum PostgresClientORM {
 }
 
 public class DatabaseConnection {
-  public let connection: PostgresConnection
-
+  let connection: PostgresConnection
+  static var notify = PassthroughSubject<Void, Never>()
+  var lastQuery: String = ""
+  var cancel: AnyCancellable?
+  
   public init(connection: PostgresConnection) {
     self.connection = connection
+    cancel = Self.notify.sink { [weak self] in
+      self?.logger.info("- Last query: \(self?.lastQuery ?? "")")
+    }
   }
 
   deinit {
+    cancel?.cancel()
     DatabaseConnector.shared.release(connection: connection)
   }
 
-  @inlinable @discardableResult
+  @discardableResult
   public func query(
     _ query: PostgresQuery,
     logger: Logger,
     file: String = #fileID,
     line: Int = #line
   ) async throws -> PostgresRowSequence {
-    try await connection.query(query, logger: logger, file: file, line: line)
+    lastQuery = query.sql
+    return try await connection.query(query, logger: logger, file: file, line: line)
   }
 
   var logger: Logger {
@@ -100,6 +109,7 @@ public actor DatabaseConnector {
   public func getConnection() async throws -> DatabaseConnection {
     if available.isEmpty {
       guard all.count < 12 else {
+        DatabaseConnection.notify.send()
         throw TableObjectError.general("Too Many pending connections")
       }
       let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.logger)
