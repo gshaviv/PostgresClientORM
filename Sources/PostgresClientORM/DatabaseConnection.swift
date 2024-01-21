@@ -37,6 +37,7 @@ public class DatabaseConnection {
   }
   let connection: PostgresConnection
   var lastQuery: String = ""
+  var lastDate = Date.distantPast
   
   public init(connection: PostgresConnection) {
     self.connection = connection
@@ -51,8 +52,8 @@ public class DatabaseConnection {
     }
     var ret = ["Last query of live connections:"]
     for notificiation in notificiations {
-      if let l = notificiation.connection?.lastQuery {
-        ret.append(l)
+      if let con = notificiation.connection {
+        ret.append("\(Int(con.lastDate.timeIntervalSinceNow)) \(con.lastQuery)")
       }
     }
     return ret.joined(separator: "\n")
@@ -70,6 +71,7 @@ public class DatabaseConnection {
     line: Int = #line
   ) async throws -> PostgresRowSequence {
     lastQuery = query.sql
+    lastDate = .now
     return try await connection.query(query, logger: logger, file: file, line: line)
   }
 
