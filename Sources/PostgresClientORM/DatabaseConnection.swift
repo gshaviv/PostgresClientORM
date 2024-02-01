@@ -38,9 +38,7 @@ public class DatabaseConnection {
   }
 
   deinit {
-    Task {
-      try? await connection.close()
-    }
+    try? connection.close().wait()
   }
 
   @inlinable @discardableResult
