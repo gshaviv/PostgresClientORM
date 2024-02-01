@@ -43,7 +43,7 @@ public struct QueryResultIterator<T: FieldSubset>: AsyncIteratorProtocol {
       if let connection {
         resultConnection = connection
       } else {
-        resultConnection = try await DatabaseConnector.shared.getConnection()
+        resultConnection = try await DatabaseConnector.getConnection()
         connection = resultConnection
       }
       let result = try await resultConnection.query(query, logger: resultConnection.logger)

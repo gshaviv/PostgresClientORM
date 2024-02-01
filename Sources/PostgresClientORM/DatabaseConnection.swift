@@ -38,7 +38,9 @@ public class DatabaseConnection {
   }
 
   deinit {
-    DatabaseConnector.shared.release(connection: connection)
+    Task {
+      try? await connection.close()
+    }
   }
 
   @inlinable @discardableResult
@@ -73,10 +75,6 @@ public class DatabaseConnection {
 ///
 /// **DATABASE_SSL** (use ssl if this enviroment variable evaluates to TRUE.
 public actor DatabaseConnector {
-  public static var shared = DatabaseConnector()
-
-  private init() {}
-
   private static var configuration: PostgresConnection.Configuration {
     get throws {
       if let url = ProcessInfo.processInfo.environment["DATABASE_URL"] {
@@ -92,35 +90,13 @@ public actor DatabaseConnector {
     }
   }
 
-  var all: [PostgresConnection] = []
-  var available: [PostgresConnection] = []
-
+  static var serial = 0
   /// Obtain a new or existing and available connection
   /// - Returns: PostgresConnection
-  public func getConnection() async throws -> DatabaseConnection {
-    if available.isEmpty {
-      guard all.count < 12 else {
-        throw TableObjectError.general("Too Many pending connections")
-      }
-      let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: all.count + 1, logger: PostgresClientORM.logger)
-      all.append(connection)
-      return DatabaseConnection(connection: connection)
-    } else {
-      let outgoing = available.removeLast()
-      return DatabaseConnection(connection: outgoing)
-    }
-  }
-
-  private func finished(connection: PostgresConnection) {
-    available.append(connection)
-  }
-
-  /// Releae a previously obtained connection. No more actions can be performed on this connection.
-  /// - Parameter connection: The connection to release
-  nonisolated func release(connection: PostgresConnection) {
-    Task.detached {
-      await self.finished(connection: connection)
-    }
+  public static func getConnection() async throws -> DatabaseConnection {
+    serial += 1
+    let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: serial, logger: PostgresClientORM.logger)
+    return DatabaseConnection(connection: connection)
   }
 
   /// Get a connection for a block
@@ -128,7 +104,7 @@ public actor DatabaseConnector {
   /// The connection is release when the block terminates. This is equivalent to doing ``obtain()`` and ``release(:)`` around the block.
   ///
   /// - Parameter doBlock: The block that is passed the connection.
-  public func withConnection<T>(doBlock: (DatabaseConnection) async throws -> T) async throws -> T {
+  public static func withConnection<T>(doBlock: (DatabaseConnection) async throws -> T) async throws -> T {
     let connection = try await getConnection()
     do {
       return try await doBlock(connection)

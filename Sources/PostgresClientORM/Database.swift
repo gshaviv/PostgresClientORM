@@ -21,7 +21,7 @@ public actor Database {
     let connection: DatabaseConnection = if let dbCon {
       dbCon
     } else {
-      try await DatabaseConnector.shared.getConnection()
+      try await DatabaseConnector.getConnection()
     }
     
     let rows = try await connection.query(sqlQuery.postgresQuery, logger: connection.logger)
@@ -55,7 +55,7 @@ public actor Database {
     let connection: DatabaseConnection = if let dbCon {
       dbCon
     } else {
-      try await DatabaseConnector.shared.getConnection()
+      try await DatabaseConnector.getConnection()
     }
     
     let rows = try await connection.query(sqlQuery.postgresQuery, logger: connection.logger)
@@ -76,7 +76,7 @@ public actor Database {
     let connection: DatabaseConnection = if let dbCon {
       dbCon
     } else {
-      try await DatabaseConnector.shared.getConnection()
+      try await DatabaseConnector.getConnection()
     }
     
     let rows = try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
@@ -105,7 +105,7 @@ public actor Database {
     let connection: DatabaseConnection = if let dbCon {
       dbCon
     } else {
-      try await DatabaseConnector.shared.getConnection()
+      try await DatabaseConnector.getConnection()
     }
     
     try await connection.query(PostgresQuery(stringLiteral: sqlText), logger: connection.logger)
@@ -115,7 +115,7 @@ public actor Database {
   /// - Parameter transactionBlock: The transaction block receives a transactionConnection parameter that has to be given to all database operations performed in the block.  The block either returns normally or throws an error in which case the transaction is rolled back
   /// - NOTE: **Important** remeber to include the transaction connection to the  database operations in the block, not doing so will cause the action to be performed outside the transaction.
   public func transaction(file: String = #file, line: Int = #line, _ transactionBlock: @escaping (_ connection: DatabaseConnection) async throws -> Void) async throws {
-    let connection = try await DatabaseConnector.shared.getConnection()
+    let connection = try await DatabaseConnector.getConnection()
     try await connection.beginTransaction()
     do {
       try await transactionBlock(connection)
