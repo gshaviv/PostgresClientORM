@@ -40,7 +40,7 @@ public class DatabaseConnection {
   deinit {
     let openConnection = connection
     Task {
-      try await openConnection.close()
+      try await openConnection.closeGracefully()
     }
   }
 
