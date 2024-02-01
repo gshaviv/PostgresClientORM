@@ -38,7 +38,10 @@ public class DatabaseConnection {
   }
 
   deinit {
-    try? connection.close().wait()
+    let openConnection = connection
+    Task {
+      try await openConnection.close()
+    }
   }
 
   @inlinable @discardableResult
