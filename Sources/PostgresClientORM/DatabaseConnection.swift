@@ -12,7 +12,7 @@ import PostgresNIO
 public enum PostgresClientORM {
   public static var logger: Logger = .init(label: "Postgres")
   public static var eventLoop = PostgresConnection.defaultEventLoopGroup.any()
-  
+
   /// Configure a PostgresClientORM
   ///
   /// - Parameters:
@@ -31,48 +31,24 @@ public enum PostgresClientORM {
 }
 
 public class DatabaseConnection {
-  static var notificiations = [Shim]()
-  struct Shim {
-    weak var connection: DatabaseConnection?
-  }
-  let connection: PostgresConnection
-  var lastQuery: String = ""
-  var lastDate = Date.distantPast
-  
+  public let connection: PostgresConnection
+
   public init(connection: PostgresConnection) {
     self.connection = connection
-    Self.notificiations.removeAll(where: { $0.connection == nil })
-    Self.notificiations.append(Shim(connection: self))
-  }
-  
-  public static func listAlive() -> String {
-    notificiations.removeAll(where: { $0.connection == nil })
-    if notificiations.isEmpty {
-      return "- None -"
-    }
-    var ret = ["Last query of live connections:"]
-    for notificiation in notificiations {
-      if let con = notificiation.connection {
-        ret.append("\(Int(con.lastDate.timeIntervalSinceNow)) \(con.lastQuery)")
-      }
-    }
-    return ret.joined(separator: "\n")
   }
 
   deinit {
     DatabaseConnector.shared.release(connection: connection)
   }
 
-  @discardableResult
+  @inlinable @discardableResult
   public func query(
     _ query: PostgresQuery,
     logger: Logger,
     file: String = #fileID,
     line: Int = #line
   ) async throws -> PostgresRowSequence {
-    lastQuery = query.sql
-    lastDate = .now
-    return try await connection.query(query, logger: logger, file: file, line: line)
+    try await connection.query(query, logger: logger, file: file, line: line)
   }
 
   var logger: Logger {
