@@ -194,17 +194,6 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
     return value
   }
   
-  @discardableResult public func get(connection: DatabaseConnection? = nil) async throws -> DAD where DAD: AnyObject {
-    if let value {
-      return value
-    }
-    _objValue = try await DAD.fetch(id: id, connection: connection)
-    guard let value else {
-      throw TableObjectError.general("Missing parent of type \(type)")
-    }
-    return value
-  }
-  
   public enum Columns: String, CodingKey {
     case root = ""
   }
