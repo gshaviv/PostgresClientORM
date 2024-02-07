@@ -135,16 +135,28 @@ public class Children<Child: TableObject>: Sequence, Codable {
 /// ```
 public class Parent<DAD: TableObject>: Codable, FieldSubset {
   public private(set) var id: DAD.IDType
-  public private(set) var value: DAD?
+  public var value: DAD? {
+    (_objValue as? DAD) ?? _value
+  }
+  private weak var _objValue: AnyObject?
+  private var _value: DAD?
     
   public init(_ id: DAD.IDType) {
     self.id = id
-    self.value = nil
   }
   
-  public init(_ value: DAD) throws {
-    self.value = value
-    if let id = value.id {
+  public init(_ inValue: DAD) throws where DAD: AnyObject {
+    _objValue = inValue
+    if let id = inValue.id {
+      self.id = id
+    } else {
+      throw TableObjectError.general("parent Id == nil")
+    }
+  }
+  
+  public init(_ inValue: DAD) throws {
+    _value = inValue
+    if let id = inValue.id {
       self.id = id
     } else {
       throw TableObjectError.general("parent Id == nil")
@@ -175,7 +187,18 @@ public class Parent<DAD: TableObject>: Codable, FieldSubset {
     if let value {
       return value
     }
-    value = try await DAD.fetch(id: id, connection: connection)
+    _value = try await DAD.fetch(id: id, connection: connection)
+    guard let value else {
+      throw TableObjectError.general("Missing parent of type \(type)")
+    }
+    return value
+  }
+  
+  @discardableResult public func get(connection: DatabaseConnection? = nil) async throws -> DAD where DAD: AnyObject {
+    if let value {
+      return value
+    }
+    _objValue = try await DAD.fetch(id: id, connection: connection)
     guard let value else {
       throw TableObjectError.general("Missing parent of type \(type)")
     }
