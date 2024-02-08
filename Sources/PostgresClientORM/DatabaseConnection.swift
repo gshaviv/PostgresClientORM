@@ -94,9 +94,9 @@ public actor DatabaseConnector {
   static var serial = 0
   /// Obtain a new or existing and available connection
   /// - Returns: PostgresConnection
-  public static func getConnection() async throws -> DatabaseConnection {
+  public static func getConnection(configuration: PostgresConnection.Configuration? = nil) async throws -> DatabaseConnection {
     serial += 1
-    let connection = try await PostgresConnection.connect(configuration: Self.configuration, id: serial, logger: PostgresClientORM.logger)
+    let connection = try await PostgresConnection.connect(configuration: configuration ?? Self.configuration, id: serial, logger: PostgresClientORM.logger)
     return DatabaseConnection(connection: connection)
   }
 
@@ -115,7 +115,7 @@ public actor DatabaseConnector {
   }
 }
 
-extension PostgresConnection.Configuration {
+public extension PostgresConnection.Configuration {
   init(url: String) throws {
     guard let components = URLComponents(string: url) else {
       throw TableObjectError.general("Bad URL \(url)")
